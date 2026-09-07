@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>长图裁剪合并工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .upload-area {
+            padding: 40px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .upload-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #3498db;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .upload-btn:hover {
+            background: #2980b9;
+        }
+        
+        .preview-area {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+        
+        .preview-container {
+            max-width: 100%;
+            overflow-x: auto;
+            position: relative;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        #imagePreview {
+            max-width: 100%;
+            display: none;
+            border-radius: 4px;
+        }
+        
+        .crop-regions {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .crop-region {
+            position: absolute;
+            background: rgba(52, 152, 219, 0.2);
+            border: 2px solid #3498db;
+            pointer-events: auto;
+        }
+        
+        .region-handle {
+            position: absolute;
+            width: 100%;
+            height: 10px;
+            cursor: ns-resize;
+            background: rgba(52, 152, 219, 0.5);
+            z-index: 10;
+        }
+        
+        .handle-top {
+            top: 0;
+            transform: translateY(-50%);
+        }
+        
+        .handle-bottom {
+            bottom: 0;
+            transform: translateY(50%);
+        }
+        
+        .region-label {
+            position: absolute;
+            top: -25px;
+            left: 10px;
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .controls {
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #27ae60;
+        }
+        
+        .btn-secondary {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: #c0392b;
+        }
+        
+        .btn-add {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-add:hover:not(:disabled) {
+            background: #2980b9;
+        }
+        
+        .regions-list {
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .region-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .region-info {
+            font-family: monospace;
+        }
+        
+        .format-selector {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        
+        .instructions {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px;
+        }
+        
+        .status-message {
+            text-align: center;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 6px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>长图裁剪合并工具</h1>
+            <p>裁剪长图中间部分，保留所需区域并自动合并</p>
+        </div>
+        
+        <div class="upload-area">
+            <label for="fileInput" class="upload-btn">选择图片</label>
+            <input type="file" id="fileInput" accept="image/*">
+            <p id="uploadStatus">支持JPG、PNG、WebP等格式</p>
+        </div>
+        
+        <div class="preview-area">
+            <div class="preview-container" id="previewContainer">
+                <img id="imagePreview" alt="图片预览">
+                <div class="crop-regions" id="cropRegions"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-add" id="addRegionBtn" disabled>添加保留区域</button>
+            <select class="format-selector" id="formatSelector">
+                <option value="png">PNG格式</option>
+                <option value="jpeg" selected>JPEG格式</option>
+                <option value="webp">WebP格式</option>
+            </select>
+            <button class="btn btn-primary" id="exportBtn" disabled>导出合并图片</button>
+            <button class="btn btn-secondary" id="resetBtn" disabled>重置</button>
+        </div>
+        
+        <div class="regions-list" id="regionsList">
+            <h3>保留区域列表</h3>
+            <div id="regionsContainer"></div>
+        </div>
+        
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
+        
+        <div class="instructions">
+            <h3>使用说明</h3>
+            <ol>
+                <li>点击"选择图片"上传长截图</li>
+                <li>拖动保留区域的上下边缘调整裁剪范围</li>
+                <li>点击"添加保留区域"可选择多个不连续区域</li>
+                <li>选择导出格式后点击"导出合并图片"</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let originalImage = null;
+        let imageScale = 1;
+        let cropRegions = [];
+        let isDragging = false;
+        let dragTarget = null;
+        let dragType = null;
+
+        // DOM元素
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const cropRegionsEl = document.getElementById('cropRegions');
+        const previewContainer = document.getElementById('previewContainer');
+        const addRegionBtn = document.getElementById('addRegionBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const formatSelector = document.getElementById('formatSelector');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const regionsContainer = document.getElementById('regionsContainer');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // 初始化
+        function init() {
+            console.log('初始化工具...');
+            
+            // 绑定事件
+            fileInput.addEventListener('change', handleFileUpload);
+            addRegionBtn.addEventListener('click', () => {
+                console.log('添加保留区域按钮点击');
+                addCropRegion();
+            });
+            exportBtn.addEventListener('click', exportImage);
+            resetBtn.addEventListener('click', resetAll);
+            
+            // 拖动事件
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('touchmove', handleTouchMove);
+            document.addEventListener('touchend', handleTouchEnd);
+            
+            showMessage('工具已准备就绪，点击选择图片开始使用', 'success');
+        }
+
+        // 显示消息
+        function showMessage(text, type = 'info') {
+            statusMessage.textContent = text;
+            statusMessage.className = `status-message ${type}`;
+            statusMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        // 处理文件上传
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            uploadStatus.textContent = `正在处理: ${file.name}...`;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    originalImage = img;
+                    imagePreview.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                    
+                    // 计算缩放比例
+                    const containerWidth = previewContainer.clientWidth;
+                    imageScale = containerWidth / img.width;
+                    
+                    // 启用按钮
+                    addRegionBtn.disabled = false;
+                    exportBtn.disabled = false;
+                    resetBtn.disabled = false;
+                    
+                    // 清空之前的裁剪区域
+                    cropRegions = [];
+                    
+                    // 添加第一个默认裁剪区域（上半部分）
+                    addCropRegion(0, 30);
+                    
+                    uploadStatus.textContent = `已上传: ${file.name} (${(file.size/1024/1024).toFixed(2)}MB)`;
+                    showMessage('图片加载成功，可开始调整裁剪区域', 'success');
+                };
+                
+                img.onerror = function() {
+                    uploadStatus.textContent = '图片加载失败，请选择有效的图片文件';
+                    showMessage('图片加载失败，请选择有效的图片文件', 'error');
+                };
+                
+                img.src = event.target.result;
+            };
+            
+            reader.onerror = function() {
+                uploadStatus.textContent = '文件读取失败，请重试';
+                showMessage('文件读取失败，请重试', 'error');
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        // 添加裁剪区域
+        function addCropRegion(startPercent = null, endPercent = null) {
+            if (!originalImage) {
+                showMessage('请先上传图片', 'error');
+                return;
+            }
+            
+            // 如果没有指定位置，自动在最后一个区域下方添加
+            let newStart = 0;
+            let newEnd = 20;
+            
+            if (cropRegions.length > 0) {
+                const lastRegion = cropRegions[cropRegions.length - 1];
+                newStart = lastRegion.end + 5; // 间隔5%
+                newEnd = newStart + 20;
+                
+                // 确保不超过图片范围
+                if (newStart > 95) newStart = 95;
+                if (newEnd > 100) newEnd = 100;
+            }
+            
+            // 使用传入的参数或自动计算的参数
+            const region = {
+                id: Date.now(),
+                start: startPercent !== null ? startPercent : newStart,
+                end: endPercent !== null ? endPercent : newEnd
+            };
+            
+            // 确保区域有效
+            if (region.start >= 100) {
+                showMessage('已到达图片底部，无法添加更多区域', 'error');
+                return;
+            }
+            
+            cropRegions.push(region);
+            console.log('添加裁剪区域:', region);
+            
+            renderCropRegions();
+            updateRegionsList();
+            showMessage(`已添加第 ${cropRegions.length} 个保留区域`, 'success');
+        }
+
+        // 渲染裁剪区域
+        function renderCropRegions() {
+            cropRegionsEl.innerHTML = '';
+            
+            if (!originalImage || cropRegions.length === 0) return;
+            
+            const imgHeight = imagePreview.clientHeight;
+            
+            cropRegions.forEach((region, index) => {
+                const top = (region.start / 100) * imgHeight;
+                const height = ((region.end - region.start) / 100) * imgHeight;
+                
+                const regionEl = document.createElement('div');
+                regionEl.className = 'crop-region';
+                regionEl.dataset.regionId = region.id;
+                regionEl.style.top = `${top}px`;
+                regionEl.style.height = `${height}px`;
+                regionEl.style.width = '100%';
+                
+                // 添加区域标签
+                const label = document.createElement('div');
+                label.className = 'region-label';
+                label.textContent = `区域 ${index + 1}`;
+                regionEl.appendChild(label);
+                
+                // 顶部拖动柄
+                const topHandle = document.createElement('div');
+                topHandle.className = 'region-handle handle-top';
+                topHandle.title = '拖动调整顶部位置';
+                topHandle.dataset.regionId = region.id;
+                topHandle.dataset.dragType = 'top';
+                regionEl.appendChild(topHandle);
+                
+                // 底部拖动柄
+                const bottomHandle = document.createElement('div');
+                bottomHandle.className = 'region-handle handle-bottom';
+                bottomHandle.title = '拖动调整底部位置';
+                bottomHandle.dataset.regionId = region.id;
+                bottomHandle.dataset.dragType = 'bottom';
+                regionEl.appendChild(bottomHandle);
+                
+                cropRegionsEl.appendChild(regionEl);
+                
+                // 添加拖动事件监听
+                topHandle.addEventListener('mousedown', (e) => startDrag(e, region.id, 'top'));
+                bottomHandle.addEventListener('mousedown', (e) => startDrag(e, region.id, 'bottom'));
+                topHandle.addEventListener('touchstart', (e) => startDrag(e, region.id, 'top'));
+                bottomHandle.addEventListener('touchstart', (e) => startDrag(e, region.id, 'bottom'));
+            });
+        }
+
+        // 开始拖动
+        function startDrag(e, regionId, type) {
+            e.preventDefault();
+            isDragging = true;
+            dragTarget = regionId;
+            dragType = type;
+            document.body.style.cursor = 'ns-resize';
+            console.log(`开始拖动: 区域${regionId}, 类型:${type}`);
+        }
+
+        // 处理鼠标移动
+        function handleMouseMove(e) {
+            if (!isDragging || !originalImage) return;
+            
+            const rect = previewContainer.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            updateRegionPosition(y);
+        }
+
+        // 处理触摸移动
+        function handleTouchMove(e) {
+            if (!isDragging || !originalImage) return;
+            
+            const rect = previewContainer.getBoundingClientRect();
+            const y = e.touches[0].clientY - rect.top;
+            updateRegionPosition(y);
+        }
+
+        // 更新区域位置
+        function updateRegionPosition(y) {
+            const imgHeight = imagePreview.clientHeight;
+            const percent = (y / imgHeight) * 100;
+            
+            const region = cropRegions.find(r => r.id === dragTarget);
+            if (!region) return;
+            
+            if (dragType === 'top') {
+                region.start = Math.max(0, Math.min(region.end - 1, percent));
+            } else {
+                region.end = Math.min(100, Math.max(region.start + 1, percent));
+            }
+            
+            // 确保区域不重叠
+            validateRegions();
+            
+            renderCropRegions();
+            updateRegionsList();
+        }
+
+        // 结束拖动
+        function handleMouseUp() {
+            if (isDragging) {
+                console.log('结束拖动');
+            }
+            isDragging = false;
+            dragTarget = null;
+            dragType = null;
+            document.body.style.cursor = '';
+        }
+        
+        function handleTouchEnd() {
+            handleMouseUp();
+        }
+
+        // 验证区域不重叠
+        function validateRegions() {
+            // 按起始位置排序
+            cropRegions.sort((a, b) => a.start - b.start);
+            
+            // 检查重叠
+            for (let i = 1; i < cropRegions.length; i++) {
+                const prev = cropRegions[i-1];
+                const curr = cropRegions[i];
+                
+                if (curr.start < prev.end) {
+                    curr.start = prev.end;
+                    curr.end = Math.max(curr.start + 1, curr.end);
+                }
+            }
+        }
+
+        // 更新区域列表
+        function updateRegionsList() {
+            regionsContainer.innerHTML = '';
+            
+            if (cropRegions.length === 0) {
+                regionsContainer.innerHTML = '<p>暂无保留区域</p>';
+                return;
+            }
+            
+            cropRegions.forEach((region, index) => {
+                const regionItem = document.createElement('div');
+                regionItem.className = 'region-item';
+                
+                const regionInfo = document.createElement('div');
+                regionInfo.className = 'region-info';
+                regionInfo.textContent = `区域 ${index+1}: ${region.start.toFixed(1)}% - ${region.end.toFixed(1)}%`;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-secondary';
+                deleteBtn.textContent = '删除';
+                deleteBtn.style.padding = '5px 10px';
+                deleteBtn.addEventListener('click', () => deleteRegion(region.id));
+                
+                regionItem.appendChild(regionInfo);
+                regionItem.appendChild(deleteBtn);
+                regionsContainer.appendChild(regionItem);
+            });
+        }
+
+        // 删除区域
+        function deleteRegion(regionId) {
+            const regionCount = cropRegions.length;
+            cropRegions = cropRegions.filter(r => r.id !== regionId);
+            
+            renderCropRegions();
+            updateRegionsList();
+            
+            showMessage(`已删除保留区域，剩余 ${cropRegions.length} 个区域`, 'success');
+            
+            if (cropRegions.length === 0 && originalImage) {
+                addCropRegion(0, 30); // 自动添加一个区域
+            }
+        }
+
+        // 导出图片
+        function exportImage() {
+            if (!originalImage) {
+                showMessage('请先上传图片', 'error');
+                return;
+            }
+            
+            if (cropRegions.length === 0) {
+                showMessage('请添加至少一个保留区域', 'error');
+                return;
+            }
+            
+            showMessage('正在处理图片，请稍候...', 'success');
+            
+            try {
+                // 创建Canvas
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 计算总高度
+                const imgWidth = originalImage.width;
+                const imgHeight = originalImage.height;
+                let totalHeight = 0;
+                
+                // 计算每个区域的高度
+                const regionsData = cropRegions.map(region => {
+                    const startY = (region.start / 100) * imgHeight;
+                    const endY = (region.end / 100) * imgHeight;
+                    const height = endY - startY;
+                    totalHeight += height;
+                    
+                    return {
+                        startY,
+                        height
+                    };
+                });
+                
+                // 设置Canvas尺寸
+                canvas.width = imgWidth;
+                canvas.height = totalHeight;
+                
+                // 绘制图片
+                let currentY = 0;
+                regionsData.forEach(region => {
+                    ctx.drawImage(
+                        originalImage,
+                        0, region.startY,
+                        imgWidth, region.height,
+                        0, currentY,
+                        imgWidth, region.height
+                    );
+                    currentY += region.height;
+                });
+                
+                // 导出图片
+                const format = formatSelector.value;
+                const quality = format === 'jpeg' ? 0.95 : 1.0;
+                
+                canvas.toBlob(blob => {
+                    if (!blob) {
+                        showMessage('图片处理失败，请重试', 'error');
+                        return;
+                    }
+                    
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `裁剪合并图片_${Date.now()}.${format}`;
+                    a.click();
+                    
+                    // 释放内存
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                    
+                    showMessage('图片导出成功！', 'success');
+                }, `image/${format}`, quality);
+                
+            } catch (error) {
+                console.error('导出错误:', error);
+                showMessage(`导出失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 重置所有
+        function resetAll() {
+            originalImage = null;
+            cropRegions = [];
+            imagePreview.style.display = 'none';
+            imagePreview.src = '';
+            cropRegionsEl.innerHTML = '';
+            regionsContainer.innerHTML = '';
+            
+            fileInput.value = '';
+            uploadStatus.textContent = '支持JPG、PNG、WebP等格式';
+            
+            addRegionBtn.disabled = true;
+            exportBtn.disabled = true;
+            resetBtn.disabled = true;
+            
+            showMessage('已重置所有设置', 'success');
+        }
+
+        // 启动应用
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
