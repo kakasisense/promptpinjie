@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>图片笔记加码小工具</title>
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>
+:root {
+    --bg-dark: #1a1a1a;
+    --bg-card: #242424;
+    --bg-input: #2d2d2d;
+    --bg-hover: #333333;
+    --primary: #c9a227;
+    --primary-hover: #b8931f;
+    --primary-light: rgba(201, 162, 39, 0.15);
+    --accent: #d4443a;
+    --accent-hover: #b93a32;
+    --success: #4a9d5b;
+    --text-primary: #f5f5f5;
+    --text-secondary: #a0a0a0;
+    --text-muted: #666666;
+    --border: #3a3a3a;
+    --border-light: #4a4a4a;
+    --shadow: 0 4px 12px rgba(0,0,0,0.3);
+    --preview-bg: #2a2a2a;
+}
+[data-theme="light"] {
+    --bg-dark: #f5f5f5;
+    --bg-card: #ffffff;
+    --bg-input: #fafafa;
+    --bg-hover: #f0f0f0;
+    --primary: #b8931f;
+    --primary-hover: #a68518;
+    --primary-light: rgba(184, 147, 31, 0.1);
+    --accent: #c93a32;
+    --accent-hover: #b0332a;
+    --success: #3d8a4c;
+    --text-primary: #1a1a1a;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --border: #e0e0e0;
+    --border-light: #d0d0d0;
+    --shadow: 0 4px 12px rgba(0,0,0,0.1);
+    --preview-bg: #e8e8e8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg-dark); min-height: 100vh; color: var(--text-primary); transition: background 0.3s, color 0.3s; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+h1 { color: var(--primary); font-size: 24px; font-weight: 600; letter-spacing: 1px; transition: color 0.3s; }
+.theme-toggle { display: flex; align-items: center; gap: 10px; }
+.theme-toggle span { font-size: 13px; color: var(--text-secondary); }
+.theme-btn { width: 50px; height: 26px; border-radius: 13px; background: var(--bg-input); border: 1px solid var(--border); cursor: pointer; position: relative; transition: all 0.3s; }
+.theme-btn::after { content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); top: 2px; left: 3px; transition: all 0.3s; }
+[data-theme="light"] .theme-btn::after { left: 25px; background: var(--primary); }
+.theme-btn:hover { border-color: var(--primary); }
+.main-layout { display: grid; grid-template-columns: 1fr 360px; gap: 20px; }
+@media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; } }
+.panel { background: var(--bg-card); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: all 0.3s; }
+.panel-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid var(--primary); transition: color 0.3s; }
+.upload-area { border: 2px dashed var(--border-light); border-radius: 8px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: var(--bg-input); }
+.upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: var(--bg-hover); }
+.upload-area p { color: var(--text-secondary); margin-bottom: 10px; transition: color 0.3s; }
+.upload-area input { display: none; }
+.btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; font-weight: 500; }
+.btn-primary { background: var(--primary); color: #1a1a1a; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--bg-hover); border-color: var(--border-light); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { filter: brightness(1.1); }
+.btn-danger { background: var(--accent); color: #fff; }
+.btn-danger:hover { background: var(--accent-hover); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; transition: color 0.3s; }
+.form-group input[type="text"], .form-group input[type="url"], .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; transition: all 0.2s; background: var(--bg-input); color: var(--text-primary); }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--primary); background: var(--bg-hover); }
+.form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-muted); }
+.form-group textarea { resize: vertical; min-height: 60px; }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+.color-input-wrapper { display: flex; align-items: center; gap: 8px; }
+.color-input-wrapper input[type="color"] { width: 40px; height: 32px; border: none; cursor: pointer; border-radius: 4px; background: transparent; }
+.color-input-wrapper input[type="text"] { flex: 1; }
+.preview-container { position: relative; background: var(--preview-bg); border-radius: 8px; overflow: hidden; min-height: 300px; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+#preview-canvas { max-width: 100%; height: auto; display: block; }
+.template-list { max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; }
+.template-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); transition: background 0.2s; }
+.template-item:last-child { border-bottom: none; }
+.template-item:hover { background: var(--bg-hover); }
+.template-item .name { font-size: 14px; color: var(--text-primary); }
+.template-item .actions { display: flex; gap: 5px; }
+.batch-container { margin-top: 15px; }
+.batch-list { display: flex; flex-wrap: wrap; gap: 10px; max-height: 150px; overflow-y: auto; padding: 10px; background: var(--bg-input); border-radius: 6px; border: 1px solid var(--border); }
+.batch-item { position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 2px solid var(--border); cursor: pointer; transition: border-color 0.2s; }
+.batch-item img { width: 100%; height: 100%; object-fit: cover; }
+.batch-item .remove-btn { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 50%; cursor: pointer; font-size: 12px; line-height: 20px; }
+.batch-item.active { border-color: var(--primary); }
+.tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 15px; }
+.tab { padding: 10px 15px; cursor: pointer; font-size: 14px; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 500; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.gradient-inputs { display: flex; gap: 10px; align-items: center; }
+.gradient-inputs input[type="color"] { width: 40px; height: 32px; border: none; cursor: pointer; border-radius: 4px; }
+.btn-group { display: flex; gap: 10px; margin-top: 15px; }
+.btn-group .btn { flex: 1; }
+.qrcode-position { display: flex; gap: 10px; flex-wrap: wrap; }
+.qrcode-position label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 13px; color: var(--text-primary); }
+.qrcode-position input[type="radio"] { margin: 0; accent-color: var(--primary); }
+.drag-hint { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+.progress-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+.progress-bar .progress { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+.section-divider { height: 1px; background: var(--border); margin: 15px 0; }
+.section-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; }
+.preset-btns { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.preset-btn { padding: 6px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); cursor: pointer; font-size: 12px; transition: all 0.2s; color: var(--text-secondary); }
+.preset-btn:hover { border-color: var(--primary); color: var(--primary); }
+.preset-btn.active { background: var(--primary); color: #1a1a1a; border-color: var(--primary); }
+.checkbox-group { display: flex; align-items: center; gap: 8px; }
+.checkbox-group input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); }
+.checkbox-group label { font-size: 13px; cursor: pointer; color: var(--text-primary); }
+.logo-preview { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+.logo-preview img { width: 60px; height: 60px; object-fit: contain; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+.logo-preview .remove-logo { color: var(--accent); cursor: pointer; font-size: 12px; }
+input[type="range"] { accent-color: var(--primary); background: var(--bg-input); }
+.position-btns { display: flex; gap: 8px; margin-bottom: 10px; }
+.position-btn { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); cursor: pointer; font-size: 13px; transition: all 0.2s; color: var(--text-secondary); text-align: center; }
+.position-btn:hover { border-color: var(--primary); color: var(--primary); }
+.position-btn.active { background: var(--primary); color: #1a1a1a; border-color: var(--primary); }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s; }
+.modal-overlay.show { opacity: 1; visibility: visible; }
+.modal { background: var(--bg-card); border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; text-align: center; border: 1px solid var(--border); }
+.modal-title { font-size: 18px; font-weight: 600; color: var(--primary); margin-bottom: 16px; }
+.modal-text { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.6; }
+.modal-filename { font-size: 16px; font-weight: 600; color: var(--text-primary); background: var(--bg-input); padding: 12px; border-radius: 6px; margin-bottom: 16px; word-break: break-all; border: 1px solid var(--border); }
+.modal-btns { display: flex; gap: 10px; }
+.modal-btns .btn { flex: 1; }
+@media (max-width: 600px) {
+    .container { padding: 10px; }
+    h1 { font-size: 20px; }
+    .panel { padding: 15px; }
+    .form-row { flex-direction: column; }
+    .btn { padding: 8px 16px; }
+    .qrcode-position { flex-direction: column; }
+    .header { flex-direction: column; gap: 15px; }
+}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>图片笔记加码小工具</h1>
+        <div class="theme-toggle">
+            <span>🌙 深色</span>
+            <button class="theme-btn" id="theme-btn" title="切换主题"></button>
+            <span>浅色 ☀️</span>
+        </div>
+    </div>
+    <div class="main-layout">
+        <div class="panel">
+            <div class="panel-title">预览区域</div>
+            <div class="upload-area" id="upload-area">
+                <p>拖拽图片到此处，或点击选择图片</p>
+                <p style="font-size:12px;color:var(--text-muted);">支持批量上传，Ctrl+V 粘贴，支持长图</p>
+                <input type="file" id="file-input" accept="image/*" multiple>
+            </div>
+            <div class="preview-container" id="preview-container" style="display:none;">
+                <canvas id="preview-canvas"></canvas>
+            </div>
+            <div class="batch-container" id="batch-container" style="display:none;">
+                <div class="panel-title" style="font-size:14px;">批量图片 (<span id="batch-count">0</span>)</div>
+                <div class="batch-list" id="batch-list"></div>
+                <div class="progress-bar" id="progress-bar" style="display:none;"><div class="progress" id="progress"></div></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="clear-btn">清空</button>
+                <button class="btn btn-success" id="download-btn">下载图片</button>
+                <button class="btn btn-primary" id="batch-download-btn" style="display:none;">批量下载</button>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="tabs">
+                <div class="tab active" data-tab="content">内容设置</div>
+                <div class="tab" data-tab="style">样式设置</div>
+                <div class="tab" data-tab="qrcode">二维码样式</div>
+                <div class="tab" data-tab="template">模板管理</div>
+            </div>
+            <div class="tab-content active" id="content-tab">
+                <div class="form-group">
+                    <label>二维码链接</label>
+                    <input type="url" id="qr-link" placeholder="https://example.com">
+                </div>
+                <div class="form-group">
+                    <label>链接文本（独立显示，作为文件名标题或说明）</label>
+                    <input type="text" id="link-text" placeholder="点击扫码查看详情">
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-link-url">
+                        <label for="show-link-url">同时显示链接地址</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>备注内容</label>
+                    <textarea id="remark-text" placeholder="输入备注内容..."></textarea>
+                </div>
+                <div class="section-divider"></div>
+                <div class="section-title">信息栏位置</div>
+                <div class="position-btns">
+                    <button class="position-btn active" data-position="bottom">⬇️ 底部（默认）</button>
+                    <button class="position-btn" data-position="top">⬆️ 顶部</button>
+                </div>
+                <div class="form-group">
+                    <label>二维码位置</label>
+                    <div class="qrcode-position">
+                        <label><input type="radio" name="qr-position" value="left" checked> 左侧固定</label>
+                        <label><input type="radio" name="qr-position" value="right"> 右侧固定</label>
+                        <label><input type="radio" name="qr-position" value="free"> 自由拖拽</label>
+                    </div>
+                    <div class="drag-hint" id="drag-hint" style="display:none;">在预览区域拖动二维码调整位置</div>
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="auto-size" checked>
+                        <label for="auto-size">自动适配大小（根据图片宽度自动调整）</label>
+                    </div>
+                    <div id="auto-size-hint" style="font-size:12px;color:var(--text-muted);margin-top:5px;">当前适配：二维码 <span id="auto-qr-size">100</span>px，字体 <span id="auto-font-size">18</span>px</div>
+                </div>
+                <div class="form-row" id="manual-size-row">
+                    <div class="form-group">
+                        <label>二维码大小</label>
+                        <input type="number" id="qr-size" value="100" min="40" max="300">
+                    </div>
+                    <div class="form-group">
+                        <label>信息栏内边距</label>
+                        <input type="number" id="info-padding" value="15" min="5" max="50">
+                    </div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="section-title">留白间距与分隔线</div>
+                <div class="preset-btns" id="gap-presets">
+                    <button class="preset-btn active" data-gap="0" data-divider="none">无留白</button>
+                    <button class="preset-btn" data-gap="20" data-divider="solid">简约 (推荐)</button>
+                    <button class="preset-btn" data-gap="30" data-divider="dashed">宽松虚线</button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>留白间距</label>
+                        <input type="number" id="gap-height" value="0" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label>分隔线样式</label>
+                        <select id="divider-style">
+                            <option value="none">无分隔线</option>
+                            <option value="solid">实线</option>
+                            <option value="dashed">虚线</option>
+                            <option value="dotted">点线</option>
+                            <option value="double">双线</option>
+                            <option value="gradient">渐变线</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>分隔线颜色</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="divider-color" value="#c9a227">
+                            <input type="text" id="divider-color-text" value="#c9a227">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>分隔线粗细</label>
+                        <input type="number" id="divider-width" value="2" min="1" max="10">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>分隔线位置</label>
+                    <select id="divider-position">
+                        <option value="center">居中</option>
+                        <option value="top">靠上</option>
+                        <option value="bottom">靠下</option>
+                    </select>
+                </div>
+            </div>
+            <div class="tab-content" id="style-tab">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>链接文本字体大小</label>
+                        <input type="number" id="link-font-size" value="18" min="10" max="40">
+                    </div>
+                    <div class="form-group">
+                        <label>链接文本颜色</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="link-color" value="#1a1a1a">
+                            <input type="text" id="link-color-text" value="#1a1a1a">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>链接地址字体大小</label>
+                        <input type="number" id="link-url-font-size" value="18" min="8" max="30">
+                    </div>
+                    <div class="form-group">
+                        <label>链接地址颜色</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="link-url-color" value="#666666">
+                            <input type="text" id="link-url-color-text" value="#666666">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>备注字体大小</label>
+                        <input type="number" id="remark-font-size" value="18" min="10" max="40">
+                    </div>
+                    <div class="form-group">
+                        <label>备注文字颜色</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="remark-color" value="#333333">
+                            <input type="text" id="remark-color-text" value="#333333">
+                        </div>
+                    </div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="form-group">
+                    <label>信息栏背景类型</label>
+                    <select id="bg-type">
+                        <option value="color">纯色</option>
+                        <option value="gradient">渐变</option>
+                        <option value="image">自定义图片</option>
+                    </select>
+                </div>
+                <div id="bg-color-section">
+                    <div class="form-group">
+                        <label>背景颜色</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="bg-color" value="#ffffff">
+                            <input type="text" id="bg-color-text" value="#ffffff">
+                        </div>
+                    </div>
+                </div>
+                <div id="bg-gradient-section" style="display:none;">
+                    <div class="form-group">
+                        <label>渐变颜色</label>
+                        <div class="gradient-inputs">
+                            <input type="color" id="gradient-start" value="#ffffff">
+                            <span style="color:var(--text-muted);">→</span>
+                            <input type="color" id="gradient-end" value="#f0f0f0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>渐变方向</label>
+                        <select id="gradient-direction">
+                            <option value="horizontal">水平</option>
+                            <option value="vertical">垂直</option>
+                            <option value="diagonal">对角线</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="bg-image-section" style="display:none;">
+                    <div class="form-group">
+                        <label>背景图片</label>
+                        <input type="file" id="bg-image-input" accept="image/*">
+                    </div>
+                </div>
+            </div>
+            <div class="tab-content" id="qrcode-tab">
+                <div class="section-title">二维码颜色（确保对比度足够，否则影响扫码）</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>前景色（码点颜色）</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="qr-fg-color" value="#000000">
+                            <input type="text" id="qr-fg-color-text" value="#000000">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>背景色</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="qr-bg-color" value="#ffffff">
+                            <input type="text" id="qr-bg-color-text" value="#ffffff">
+                        </div>
+                    </div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="section-title">二维码样式</div>
+                <div class="form-group">
+                    <label>圆角大小</label>
+                    <input type="range" id="qr-radius" min="0" max="20" value="0" style="width:100%">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);">
+                        <span>直角</span>
+                        <span id="radius-value">0px</span>
+                        <span>圆角</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="qr-has-logo">
+                        <label for="qr-has-logo">添加Logo（Logo大小不超过二维码的30%）</label>
+                    </div>
+                </div>
+                <div id="logo-section" style="display:none;">
+                    <div class="form-group">
+                        <label>选择Logo图片</label>
+                        <input type="file" id="qr-logo-input" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label>Logo大小比例</label>
+                        <input type="range" id="logo-size" min="10" max="30" value="20" style="width:100%">
+                        <div style="font-size:12px;color:var(--text-muted);text-align:center;"><span id="logo-size-value">20</span>%</div>
+                    </div>
+                    <div class="logo-preview" id="logo-preview" style="display:none;">
+                        <img id="logo-preview-img" src="">
+                        <span class="remove-logo" id="remove-logo">移除Logo</span>
+                    </div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="section-title">容错级别（越高越能容忍损坏，但密度增加）</div>
+                <div class="form-group">
+                    <select id="qr-level">
+                        <option value="L">L - 低 (7%可纠正)</option>
+                        <option value="M" selected>M - 中 (15%可纠正) - 推荐</option>
+                        <option value="Q">Q - 较高 (25%可纠正)</option>
+                        <option value="H">H - 高 (30%可纠正) - 带Logo推荐</option>
+                    </select>
+                </div>
+            </div>
+            <div class="tab-content" id="template-tab">
+                <div class="form-group">
+                    <label>模板名称</label>
+                    <input type="text" id="template-name" placeholder="输入模板名称">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="save-template-btn">保存模板</button>
+                </div>
+                <div class="form-group" style="margin-top:20px;">
+                    <label>已保存模板</label>
+                    <div class="template-list" id="template-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+        <div class="modal-title" id="modal-title">保存图片</div>
+        <div class="modal-text" id="modal-text">图片已准备好，请长按图片保存，或点击下方按钮。</div>
+        <div class="modal-filename" id="modal-filename">文件名.png</div>
+        <img id="modal-preview-img" style="max-width:100%;border-radius:6px;margin-bottom:16px;display:none;">
+        <div class="modal-btns">
+            <button class="btn btn-secondary" id="modal-cancel">取消</button>
+            <button class="btn btn-primary" id="modal-confirm">下载</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script>
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
+const themeBtn = document.getElementById('theme-btn');
+themeBtn.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+});
+
+const state = {
+    images: [],
+    currentIndex: 0,
+    bgImage: null,
+    qrLogo: null,
+    qrPosition: { x: 0, y: 0 },
+    isDragging: false,
+    dragOffset: { x: 0, y: 0 },
+    templates: JSON.parse(localStorage.getItem('qr-templates') || '[]'),
+    currentQrRect: null,
+    infoBarPosition: 'bottom'
+};
+
+const canvas = document.getElementById('preview-canvas');
+const ctx = canvas.getContext('2d');
+const uploadArea = document.getElementById('upload-area');
+const previewContainer = document.getElementById('preview-container');
+const fileInput = document.getElementById('file-input');
+const batchContainer = document.getElementById('batch-container');
+const batchList = document.getElementById('batch-list');
+const batchCount = document.getElementById('batch-count');
+const batchDownloadBtn = document.getElementById('batch-download-btn');
+const dragHint = document.getElementById('drag-hint');
+const progressBar = document.getElementById('progress-bar');
+const progress = document.getElementById('progress');
+const modalOverlay = document.getElementById('modal-overlay');
+const modalTitle = document.getElementById('modal-title');
+const modalText = document.getElementById('modal-text');
+const modalFilename = document.getElementById('modal-filename');
+const modalPreviewImg = document.getElementById('modal-preview-img');
+const modalCancel = document.getElementById('modal-cancel');
+const modalConfirm = document.getElementById('modal-confirm');
+
+function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function showModal(title, text, filename, dataUrl, onConfirm) {
+    modalTitle.textContent = title;
+    modalText.textContent = text;
+    modalFilename.textContent = filename;
+    
+    if (isMobile() && dataUrl) {
+        modalPreviewImg.src = dataUrl;
+        modalPreviewImg.style.display = 'block';
+        modalText.textContent = '长按图片保存到相册，或点击下载按钮：';
+    } else {
+        modalPreviewImg.style.display = 'none';
+    }
+    
+    modalOverlay.classList.add('show');
+    
+    modalConfirm.onclick = () => {
+        modalOverlay.classList.remove('show');
+        if (onConfirm) onConfirm();
+    };
+    
+    modalCancel.onclick = () => {
+        modalOverlay.classList.remove('show');
+    };
+}
+
+modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+        modalOverlay.classList.remove('show');
+    }
+});
+
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFiles(fileInput.files); });
+document.addEventListener('paste', (e) => {
+    const items = e.clipboardData.items;
+    const files = [];
+    for (let item of items) {
+        if (item.type.indexOf('image') !== -1) files.push(item.getAsFile());
+    }
+    if (files.length) handleFiles(files);
+});
+
+document.querySelectorAll('.position-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.position-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.infoBarPosition = btn.dataset.position;
+        renderPreview();
+    });
+});
+
+// 自动大小开关事件处理
+const autoSizeCheckbox = document.getElementById('auto-size');
+const manualSizeRow = document.getElementById('manual-size-row');
+const autoSizeHint = document.getElementById('auto-size-hint');
+
+autoSizeCheckbox.addEventListener('change', () => {
+    if (autoSizeCheckbox.checked) {
+        manualSizeRow.style.display = 'none';
+        autoSizeHint.style.display = 'block';
+    } else {
+        manualSizeRow.style.display = 'flex';
+        autoSizeHint.style.display = 'none';
+    }
+    renderPreview();
+});
+
+// 初始化自动大小UI状态
+if (autoSizeCheckbox.checked) {
+    manualSizeRow.style.display = 'none';
+    autoSizeHint.style.display = 'block';
+} else {
+    manualSizeRow.style.display = 'flex';
+    autoSizeHint.style.display = 'none';
+}
+
+function handleFiles(files) {
+    if (!files || files.length === 0) return;
+    const validFiles = Array.from(files).filter(f => f && f.type && f.type.startsWith('image/'));
+    if (!validFiles.length) return;
+    validFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                state.images.push({ src: e.target.result, img: img, name: file.name || 'image.png' });
+                updateBatchUI();
+                if (state.images.length === 1) {
+                    state.currentIndex = 0;
+                    renderPreview();
+                }
+            };
+            img.onerror = () => console.error('图片加载失败');
+            img.src = e.target.result;
+        };
+        reader.onerror = () => console.error('文件读取失败');
+        reader.readAsDataURL(file);
+    });
+}
+
+function updateBatchUI() {
+    if (state.images.length > 1) {
+        uploadArea.style.display = 'none';
+        previewContainer.style.display = 'block';
+        batchContainer.style.display = 'block';
+        batchDownloadBtn.style.display = 'block';
+        batchCount.textContent = state.images.length;
+        batchList.innerHTML = state.images.map((item, i) => `
+            <div class="batch-item ${i === state.currentIndex ? 'active' : ''}" data-index="${i}">
+                <img src="${item.src}">
+                <button class="remove-btn" data-index="${i}">×</button>
+            </div>
+        `).join('');
+        batchList.querySelectorAll('.batch-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-btn')) return;
+                state.currentIndex = parseInt(el.dataset.index);
+                updateBatchUI();
+                renderPreview();
+            });
+        });
+        batchList.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = parseInt(btn.dataset.index);
+                state.images.splice(idx, 1);
+                if (state.currentIndex >= state.images.length) state.currentIndex = state.images.length - 1;
+                if (state.images.length === 0) { resetAll(); return; }
+                if (state.images.length === 1) {
+                    batchContainer.style.display = 'none';
+                    batchDownloadBtn.style.display = 'none';
+                }
+                updateBatchUI();
+                renderPreview();
+            });
+        });
+    } else if (state.images.length === 1) {
+        uploadArea.style.display = 'none';
+        previewContainer.style.display = 'block';
+        batchContainer.style.display = 'none';
+        batchDownloadBtn.style.display = 'none';
+        renderPreview();
+    } else {
+        resetAll();
+    }
+}
+
+function resetAll() {
+    state.images = [];
+    state.currentIndex = 0;
+    uploadArea.style.display = 'block';
+    previewContainer.style.display = 'none';
+    batchContainer.style.display = 'none';
+    batchDownloadBtn.style.display = 'none';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function calculateAutoSize(imageWidth) {
+    // 基于图片宽度计算合适的二维码大小和字体大小
+    const baseWidth = 800; // 基准宽度
+    const ratio = imageWidth / baseWidth;
+    
+    // 计算自动大小，确保最小尺寸
+    const qrSize = Math.max(40, Math.round(100 * ratio));
+    const fontSize = Math.max(10, Math.round(18 * ratio));
+    const padding = Math.max(5, Math.round(15 * ratio));
+    
+    return { qrSize, fontSize, padding };
+}
+
+function getConfig() {
+    const qrPos = document.querySelector('input[name="qr-position"]:checked').value;
+    const autoSize = document.getElementById('auto-size').checked;
+    
+    let qrSize = parseInt(document.getElementById('qr-size').value) || 100;
+    let linkFontSize = parseInt(document.getElementById('link-font-size').value) || 18;
+    let linkUrlFontSize = parseInt(document.getElementById('link-url-font-size').value) || 18;
+    let remarkFontSize = parseInt(document.getElementById('remark-font-size').value) || 18;
+    let infoPadding = parseInt(document.getElementById('info-padding').value) || 15;
+    
+    // 如果启用自动大小且有图片，根据图片宽度自动调整
+    if (autoSize && state.images.length > 0) {
+        const currentImage = state.images[state.currentIndex];
+        if (currentImage && currentImage.img) {
+            const sizes = calculateAutoSize(currentImage.img.width);
+            qrSize = sizes.qrSize;
+            linkFontSize = sizes.fontSize;
+            linkUrlFontSize = sizes.fontSize;
+            remarkFontSize = sizes.fontSize;
+            infoPadding = sizes.padding;
+            
+            // 更新UI显示
+            document.getElementById('auto-qr-size').textContent = qrSize;
+            document.getElementById('auto-font-size').textContent = sizes.fontSize;
+        }
+    }
+    
+    return {
+        qrLink: document.getElementById('qr-link').value,
+        linkText: document.getElementById('link-text').value,
+        showLinkUrl: document.getElementById('show-link-url').checked,
+        remarkText: document.getElementById('remark-text').value,
+        qrPosition: qrPos,
+        qrSize,
+        infoPadding,
+        gapHeight: parseInt(document.getElementById('gap-height').value) || 0,
+        dividerStyle: document.getElementById('divider-style').value,
+        dividerColor: document.getElementById('divider-color').value,
+        dividerWidth: parseInt(document.getElementById('divider-width').value) || 2,
+        dividerPosition: document.getElementById('divider-position').value,
+        bgType: document.getElementById('bg-type').value,
+        bgColor: document.getElementById('bg-color').value,
+        gradientStart: document.getElementById('gradient-start').value,
+        gradientEnd: document.getElementById('gradient-end').value,
+        gradientDirection: document.getElementById('gradient-direction').value,
+        bgImage: state.bgImage,
+        linkColor: document.getElementById('link-color').value,
+        linkFontSize,
+        linkUrlColor: document.getElementById('link-url-color').value,
+        linkUrlFontSize,
+        remarkColor: document.getElementById('remark-color').value,
+        remarkFontSize,
+        freeQrPos: state.qrPosition,
+        qrFgColor: document.getElementById('qr-fg-color').value,
+        qrBgColor: document.getElementById('qr-bg-color').value,
+        qrRadius: parseInt(document.getElementById('qr-radius').value) || 0,
+        hasLogo: document.getElementById('qr-has-logo').checked,
+        qrLogo: state.qrLogo,
+        logoSize: parseInt(document.getElementById('logo-size').value) || 20,
+        qrLevel: document.getElementById('qr-level').value,
+        infoBarPosition: state.infoBarPosition,
+        autoSize
+    };
+}
+
+function generateQRCode(text, size, config) {
+    if (!text) text = 'https://example.com';
+    const levelMap = { 'L': 1, 'M': 0, 'Q': 3, 'H': 2 };
+    const qr = qrcode(levelMap[config.qrLevel] || 0, config.qrLevel);
+    qr.addData(text);
+    qr.make();
+    const moduleCount = qr.getModuleCount();
+    const cellSize = size / moduleCount;
+    const qrCanvas = document.createElement('canvas');
+    qrCanvas.width = size;
+    qrCanvas.height = size;
+    const qrCtx = qrCanvas.getContext('2d');
+    
+    if (config.qrRadius > 0) {
+        qrCtx.fillStyle = config.qrBgColor;
+        roundRect(qrCtx, 0, 0, size, size, config.qrRadius);
+        qrCtx.fill();
+    } else {
+        qrCtx.fillStyle = config.qrBgColor;
+        qrCtx.fillRect(0, 0, size, size);
+    }
+    
+    qrCtx.fillStyle = config.qrFgColor;
+    for (let row = 0; row < moduleCount; row++) {
+        for (let col = 0; col < moduleCount; col++) {
+            if (qr.isDark(row, col)) {
+                const x = col * cellSize;
+                const y = row * cellSize;
+                if (config.qrRadius > 0) {
+                    roundRect(qrCtx, x, y, cellSize, cellSize, config.qrRadius / 4);
+                    qrCtx.fill();
+                } else {
+                    qrCtx.fillRect(x, y, cellSize, cellSize);
+                }
+            }
+        }
+    }
+    
+    if (config.hasLogo && config.qrLogo) {
+        const logoSizePx = size * (config.logoSize / 100);
+        const logoX = (size - logoSizePx) / 2;
+        const logoY = (size - logoSizePx) / 2;
+        const padding = logoSizePx * 0.1;
+        qrCtx.fillStyle = config.qrBgColor;
+        qrCtx.fillRect(logoX - padding, logoY - padding, logoSizePx + padding * 2, logoSizePx + padding * 2);
+        qrCtx.drawImage(config.qrLogo, logoX, logoY, logoSizePx, logoSizePx);
+    }
+    
+    return qrCanvas;
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+}
+
+function drawDivider(context, config, canvasWidth, gapStartY, gapHeight) {
+    if (config.dividerStyle === 'none' || gapHeight <= 0) return;
+    
+    const lineWidth = config.dividerWidth;
+    let lineY;
+    const pos = config.dividerPosition;
+    
+    if (pos === 'top') lineY = gapStartY + lineWidth;
+    else if (pos === 'bottom') lineY = gapStartY + gapHeight - lineWidth;
+    else lineY = gapStartY + gapHeight / 2;
+    
+    context.strokeStyle = config.dividerColor;
+    context.lineWidth = lineWidth;
+    context.beginPath();
+    
+    const padding = 20;
+    const startX = padding;
+    const endX = canvasWidth - padding;
+    
+    if (config.dividerStyle === 'solid') {
+        context.moveTo(startX, lineY);
+        context.lineTo(endX, lineY);
+        context.stroke();
+    } else if (config.dividerStyle === 'dashed') {
+        context.setLineDash([10, 5]);
+        context.moveTo(startX, lineY);
+        context.lineTo(endX, lineY);
+        context.stroke();
+        context.setLineDash([]);
+    } else if (config.dividerStyle === 'dotted') {
+        context.setLineDash([2, 4]);
+        context.moveTo(startX, lineY);
+        context.lineTo(endX, lineY);
+        context.stroke();
+        context.setLineDash([]);
+    } else if (config.dividerStyle === 'double') {
+        context.moveTo(startX, lineY - 3);
+        context.lineTo(endX, lineY - 3);
+        context.stroke();
+        context.moveTo(startX, lineY + 3);
+        context.lineTo(endX, lineY + 3);
+        context.stroke();
+    } else if (config.dividerStyle === 'gradient') {
+        const gradient = context.createLinearGradient(startX, lineY, endX, lineY);
+        gradient.addColorStop(0, 'transparent');
+        gradient.addColorStop(0.2, config.dividerColor);
+        gradient.addColorStop(0.8, config.dividerColor);
+        gradient.addColorStop(1, 'transparent');
+        context.strokeStyle = gradient;
+        context.moveTo(startX, lineY);
+        context.lineTo(endX, lineY);
+        context.stroke();
+    }
+}
+
+function calculateInfoBarHeight(config, canvasWidth, context) {
+    const padding = config.infoPadding;
+    const qrSize = config.qrSize;
+    const linkFontSize = config.linkFontSize;
+    const linkUrlFontSize = config.linkUrlFontSize;
+    const remarkFontSize = config.remarkFontSize;
+    const textAreaWidth = canvasWidth - qrSize - padding * 3;
+    let totalTextHeight = padding * 2;
+    
+    const linkText = config.linkText || '扫码查看详情';
+    context.font = `bold ${linkFontSize}px sans-serif`;
+    const linkLines = wrapText(linkText, textAreaWidth, context);
+    totalTextHeight += linkLines.length * (linkFontSize + 4);
+    
+    if (config.showLinkUrl && config.qrLink) {
+        context.font = `${linkUrlFontSize}px sans-serif`;
+        const urlLines = wrapText(config.qrLink, textAreaWidth, context);
+        totalTextHeight += urlLines.length * (linkUrlFontSize + 3) + 4;
+    }
+    
+    if (config.remarkText) {
+        context.font = `${remarkFontSize}px sans-serif`;
+        const remarkLines = wrapText(config.remarkText, textAreaWidth, context);
+        totalTextHeight += remarkLines.length * (remarkFontSize + 4) + 8;
+    }
+    
+    const minHeight = qrSize + padding * 2;
+    return Math.max(minHeight, totalTextHeight);
+}
+
+function wrapText(text, maxWidth, context) {
+    const lines = [];
+    let currentLine = '';
+    for (let char of text) {
+        const testLine = currentLine + char;
+        const metrics = context.measureText(testLine);
+        if (metrics.width > maxWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = char;
+        } else {
+            currentLine = testLine;
+        }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines.length ? lines : [''];
+}
+
+function getFileName(config) {
+    const linkText = config.linkText || '扫码查看详情';
+    return linkText.replace(/[\\/:*?"<>|]/g, '_').substring(0, 50);
+}
+
+function renderPreview() {
+    if (!state.images.length) return;
+    const currentImage = state.images[state.currentIndex];
+    if (!currentImage || !currentImage.img) return;
+    const config = getConfig();
+    const img = currentImage.img;
+    const infoBarHeight = calculateInfoBarHeight(config, img.width, ctx);
+    const gapHeight = config.gapHeight;
+    const isTop = config.infoBarPosition === 'top';
+    
+    canvas.width = img.width;
+    canvas.height = img.height + gapHeight + infoBarHeight;
+    
+    if (isTop) {
+        drawInfoBar(config, img.width, 0, infoBarHeight, ctx, canvas, true);
+        if (gapHeight > 0) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, infoBarHeight, img.width, gapHeight);
+            drawDivider(ctx, config, img.width, infoBarHeight, gapHeight);
+        }
+        ctx.drawImage(img, 0, infoBarHeight + gapHeight);
+    } else {
+        ctx.drawImage(img, 0, 0);
+        if (gapHeight > 0) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, img.height, img.width, gapHeight);
+            drawDivider(ctx, config, img.width, img.height, gapHeight);
+        }
+        drawInfoBar(config, img.width, img.height + gapHeight, infoBarHeight, ctx, canvas, false);
+    }
+}
+
+function drawInfoBar(config, canvasWidth, startY, infoBarHeight, context, targetCanvas, isTop) {
+    const padding = config.infoPadding;
+    const y = startY;
+    context.save();
+    context.beginPath();
+    context.rect(0, y, canvasWidth, infoBarHeight);
+    context.clip();
+    
+    if (config.bgType === 'color') {
+        context.fillStyle = config.bgColor;
+        context.fillRect(0, y, canvasWidth, infoBarHeight);
+    } else if (config.bgType === 'gradient') {
+        let gradient;
+        if (config.gradientDirection === 'horizontal') {
+            gradient = context.createLinearGradient(0, y, canvasWidth, y);
+        } else if (config.gradientDirection === 'vertical') {
+            gradient = context.createLinearGradient(0, y, 0, y + infoBarHeight);
+        } else {
+            gradient = context.createLinearGradient(0, y, canvasWidth, y + infoBarHeight);
+        }
+        gradient.addColorStop(0, config.gradientStart);
+        gradient.addColorStop(1, config.gradientEnd);
+        context.fillStyle = gradient;
+        context.fillRect(0, y, canvasWidth, infoBarHeight);
+    } else if (config.bgType === 'image' && config.bgImage) {
+        context.drawImage(config.bgImage, 0, y, canvasWidth, infoBarHeight);
+    } else {
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, y, canvasWidth, infoBarHeight);
+    }
+    context.restore();
+
+    const qrCanvas = generateQRCode(config.qrLink, config.qrSize, config);
+    if (qrCanvas) {
+        let qrX, qrY;
+        if (config.qrPosition === 'left') {
+            qrX = padding;
+            qrY = y + (infoBarHeight - config.qrSize) / 2;
+        } else if (config.qrPosition === 'right') {
+            qrX = canvasWidth - padding - config.qrSize;
+            qrY = y + (infoBarHeight - config.qrSize) / 2;
+        } else {
+            qrX = config.freeQrPos.x || padding;
+            qrY = y + (config.freeQrPos.y || (infoBarHeight - config.qrSize) / 2);
+            if (qrX < 0) qrX = padding;
+            if (qrX > canvasWidth - config.qrSize - padding) qrX = canvasWidth - config.qrSize - padding;
+            if (qrY < y + padding) qrY = y + padding;
+            if (qrY > y + infoBarHeight - config.qrSize - padding) qrY = y + infoBarHeight - config.qrSize - padding;
+        }
+        context.drawImage(qrCanvas, qrX, qrY);
+        if (targetCanvas === canvas) {
+            state.currentQrRect = { x: qrX, y: qrY, size: config.qrSize, infoBarY: y, infoBarHeight };
+        }
+    }
+
+    const textStartX = config.qrPosition === 'right' ? padding : padding + config.qrSize + padding;
+    const textEndX = config.qrPosition === 'right' ? canvasWidth - padding - config.qrSize - padding : canvasWidth - padding;
+    const textWidth = textEndX - textStartX;
+    let textY = y + padding;
+
+    const linkText = config.linkText || '扫码查看详情';
+    context.font = `bold ${config.linkFontSize}px sans-serif`;
+    context.fillStyle = config.linkColor;
+    context.textBaseline = 'top';
+    const linkLines = wrapText(linkText, textWidth, context);
+    linkLines.forEach(line => {
+        context.fillText(line, textStartX, textY);
+        textY += config.linkFontSize + 4;
+    });
+
+    if (config.showLinkUrl && config.qrLink) {
+        textY += 4;
+        context.font = `${config.linkUrlFontSize}px sans-serif`;
+        context.fillStyle = config.linkUrlColor;
+        const urlLines = wrapText(config.qrLink, textWidth, context);
+        urlLines.forEach(line => {
+            context.fillText(line, textStartX, textY);
+            textY += config.linkUrlFontSize + 3;
+        });
+    }
+
+    if (config.remarkText) {
+        textY += 8;
+        context.font = `${config.remarkFontSize}px sans-serif`;
+        context.fillStyle = config.remarkColor;
+        const remarkLines = wrapText(config.remarkText, textWidth, context);
+        remarkLines.forEach(line => {
+            context.fillText(line, textStartX, textY);
+            textY += config.remarkFontSize + 4;
+        });
+    }
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+    const config = getConfig();
+    if (config.qrPosition !== 'free' || !state.currentQrRect) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    const qr = state.currentQrRect;
+    if (x >= qr.x && x <= qr.x + qr.size && y >= qr.y && y <= qr.y + qr.size) {
+        state.isDragging = true;
+        state.dragOffset = { x: x - qr.x, y: y - qr.y };
+        canvas.style.cursor = 'grabbing';
+        e.preventDefault();
+    }
+});
+
+canvas.addEventListener('pointermove', (e) => {
+    if (!state.isDragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    const qr = state.currentQrRect;
+    let newX = x - state.dragOffset.x;
+    let newY = y - state.dragOffset.y;
+    newX = Math.max(0, Math.min(canvas.width - qr.size, newX));
+    newY = Math.max(qr.infoBarY, Math.min(qr.infoBarY + qr.infoBarHeight - qr.size, newY));
+    state.qrPosition = { x: newX, y: newY - qr.infoBarY };
+    renderPreview();
+    e.preventDefault();
+});
+
+canvas.addEventListener('pointerup', () => { state.isDragging = false; canvas.style.cursor = 'default'; });
+canvas.addEventListener('pointerleave', () => { state.isDragging = false; canvas.style.cursor = 'default'; });
+
+document.querySelectorAll('input[name="qr-position"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        dragHint.style.display = radio.value === 'free' ? 'block' : 'none';
+        renderPreview();
+    });
+});
+
+const inputsToWatch = ['qr-link', 'link-text', 'show-link-url', 'remark-text', 'qr-size', 'info-padding', 'gap-height', 'divider-style', 'divider-color', 'divider-width', 'divider-position', 'bg-type', 'bg-color', 'gradient-start', 'gradient-end', 'gradient-direction', 'link-color', 'link-font-size', 'link-url-color', 'link-url-font-size', 'remark-color', 'remark-font-size', 'qr-fg-color', 'qr-bg-color', 'qr-radius', 'logo-size', 'qr-level'];
+inputsToWatch.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('input', renderPreview);
+        if (el.type === 'checkbox' || el.tagName === 'SELECT') el.addEventListener('change', renderPreview);
+    }
+});
+
+document.querySelectorAll('#gap-presets .preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#gap-presets .preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('gap-height').value = btn.dataset.gap;
+        document.getElementById('divider-style').value = btn.dataset.divider;
+        renderPreview();
+    });
+});
+
+document.getElementById('gap-height').addEventListener('input', () => {
+    document.querySelectorAll('#gap-presets .preset-btn').forEach(b => b.classList.remove('active'));
+});
+
+document.getElementById('bg-type').addEventListener('change', (e) => {
+    document.getElementById('bg-color-section').style.display = e.target.value === 'color' ? 'block' : 'none';
+    document.getElementById('bg-gradient-section').style.display = e.target.value === 'gradient' ? 'block' : 'none';
+    document.getElementById('bg-image-section').style.display = e.target.value === 'image' ? 'block' : 'none';
+    renderPreview();
+});
+
+document.getElementById('bg-image-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => { state.bgImage = img; renderPreview(); };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+['bg-color', 'link-color', 'link-url-color', 'remark-color', 'qr-fg-color', 'qr-bg-color', 'divider-color'].forEach(id => {
+    const colorInput = document.getElementById(id);
+    const textInput = document.getElementById(id + '-text');
+    if (colorInput && textInput) {
+        colorInput.addEventListener('input', () => { textInput.value = colorInput.value; renderPreview(); });
+        textInput.addEventListener('input', () => {
+            if (/^#[0-9A-Fa-f]{6}$/.test(textInput.value)) {
+                colorInput.value = textInput.value;
+                renderPreview();
+            }
+        });
+    }
+});
+
+document.getElementById('qr-radius').addEventListener('input', (e) => {
+    document.getElementById('radius-value').textContent = e.target.value + 'px';
+});
+
+document.getElementById('logo-size').addEventListener('input', (e) => {
+    document.getElementById('logo-size-value').textContent = e.target.value;
+});
+
+document.getElementById('qr-has-logo').addEventListener('change', (e) => {
+    document.getElementById('logo-section').style.display = e.target.checked ? 'block' : 'none';
+    renderPreview();
+});
+
+document.getElementById('qr-logo-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                state.qrLogo = img;
+                document.getElementById('logo-preview').style.display = 'flex';
+                document.getElementById('logo-preview-img').src = ev.target.result;
+                renderPreview();
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+document.getElementById('remove-logo').addEventListener('click', () => {
+    state.qrLogo = null;
+    document.getElementById('logo-preview').style.display = 'none';
+    document.getElementById('qr-logo-input').value = '';
+    renderPreview();
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+    });
+});
+
+function saveTemplate() {
+    const name = document.getElementById('template-name').value.trim();
+    if (!name) { alert('请输入模板名称'); return; }
+    const config = getConfig();
+    delete config.bgImage;
+    delete config.qrLogo;
+    const template = { name, config, createdAt: Date.now() };
+    const existingIndex = state.templates.findIndex(t => t.name === name);
+    if (existingIndex >= 0) {
+        state.templates[existingIndex] = template;
+    } else {
+        state.templates.push(template);
+    }
+    localStorage.setItem('qr-templates', JSON.stringify(state.templates));
+    renderTemplateList();
+    document.getElementById('template-name').value = '';
+}
+
+function loadTemplate(template) {
+    const c = template.config;
+    document.getElementById('qr-link').value = c.qrLink || '';
+    document.getElementById('link-text').value = c.linkText || '';
+    document.getElementById('show-link-url').checked = c.showLinkUrl || false;
+    document.getElementById('remark-text').value = c.remarkText || '';
+    document.querySelector(`input[name="qr-position"][value="${c.qrPosition || 'left'}"]`).checked = true;
+    dragHint.style.display = c.qrPosition === 'free' ? 'block' : 'none';
+    document.getElementById('qr-size').value = c.qrSize || 100;
+    document.getElementById('info-padding').value = c.infoPadding || 15;
+    document.getElementById('gap-height').value = c.gapHeight || 0;
+    document.getElementById('divider-style').value = c.dividerStyle || 'none';
+    document.getElementById('divider-color').value = c.dividerColor || '#c9a227';
+    document.getElementById('divider-color-text').value = c.dividerColor || '#c9a227';
+    document.getElementById('divider-width').value = c.dividerWidth || 2;
+    document.getElementById('divider-position').value = c.dividerPosition || 'center';
+    document.getElementById('bg-type').value = c.bgType || 'color';
+    document.getElementById('bg-color').value = c.bgColor || '#ffffff';
+    document.getElementById('bg-color-text').value = c.bgColor || '#ffffff';
+    document.getElementById('gradient-start').value = c.gradientStart || '#ffffff';
+    document.getElementById('gradient-end').value = c.gradientEnd || '#f0f0f0';
+    document.getElementById('gradient-direction').value = c.gradientDirection || 'horizontal';
+    document.getElementById('link-color').value = c.linkColor || '#1a1a1a';
+    document.getElementById('link-color-text').value = c.linkColor || '#1a1a1a';
+    document.getElementById('link-font-size').value = c.linkFontSize || 18;
+    document.getElementById('link-url-color').value = c.linkUrlColor || '#666666';
+    document.getElementById('link-url-color-text').value = c.linkUrlColor || '#666666';
+    document.getElementById('link-url-font-size').value = c.linkUrlFontSize || 18;
+    document.getElementById('remark-color').value = c.remarkColor || '#333333';
+    document.getElementById('remark-color-text').value = c.remarkColor || '#333333';
+    document.getElementById('remark-font-size').value = c.remarkFontSize || 18;
+    document.getElementById('qr-fg-color').value = c.qrFgColor || '#000000';
+    document.getElementById('qr-fg-color-text').value = c.qrFgColor || '#000000';
+    document.getElementById('qr-bg-color').value = c.qrBgColor || '#ffffff';
+    document.getElementById('qr-bg-color-text').value = c.qrBgColor || '#ffffff';
+    document.getElementById('qr-radius').value = c.qrRadius || 0;
+    document.getElementById('radius-value').textContent = (c.qrRadius || 0) + 'px';
+    document.getElementById('qr-has-logo').checked = c.hasLogo || false;
+    document.getElementById('logo-section').style.display = c.hasLogo ? 'block' : 'none';
+    document.getElementById('logo-size').value = c.logoSize || 20;
+    document.getElementById('logo-size-value').textContent = c.logoSize || 20;
+    document.getElementById('qr-level').value = c.qrLevel || 'M';
+    state.qrPosition = c.freeQrPos || { x: 0, y: 0 };
+    state.infoBarPosition = c.infoBarPosition || 'bottom';
+    
+    document.querySelectorAll('.position-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.position-btn[data-position="${state.infoBarPosition}"]`).classList.add('active');
+    
+    if (c.bgType === 'color') {
+        document.getElementById('bg-color-section').style.display = 'block';
+        document.getElementById('bg-gradient-section').style.display = 'none';
+        document.getElementById('bg-image-section').style.display = 'none';
+    } else if (c.bgType === 'gradient') {
+        document.getElementById('bg-color-section').style.display = 'none';
+        document.getElementById('bg-gradient-section').style.display = 'block';
+        document.getElementById('bg-image-section').style.display = 'none';
+    } else if (c.bgType === 'image') {
+        document.getElementById('bg-color-section').style.display = 'none';
+        document.getElementById('bg-gradient-section').style.display = 'none';
+        document.getElementById('bg-image-section').style.display = 'block';
+    }
+    renderPreview();
+}
+
+function deleteTemplate(index) {
+    if (confirm('确定删除此模板？')) {
+        state.templates.splice(index, 1);
+        localStorage.setItem('qr-templates', JSON.stringify(state.templates));
+        renderTemplateList();
+    }
+}
+
+function renderTemplateList() {
+    const list = document.getElementById('template-list');
+    if (!state.templates.length) {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">暂无保存的模板</div>';
+        return;
+    }
+    list.innerHTML = state.templates.map((t, i) => `
+        <div class="template-item" data-index="${i}">
+            <span class="name">${t.name}</span>
+            <div class="actions">
+                <button class="btn btn-primary btn-sm" onclick="loadTemplate(state.templates[${i}])">应用</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteTemplate(${i})">删除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+document.getElementById('save-template-btn').addEventListener('click', saveTemplate);
+document.getElementById('clear-btn').addEventListener('click', resetAll);
+
+function downloadImage(fileName, dataUrl) {
+    const link = document.createElement('a');
+    link.download = fileName + '.png';
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+document.getElementById('download-btn').addEventListener('click', () => {
+    if (!state.images.length) { alert('请先上传图片'); return; }
+    const config = getConfig();
+    const fileName = getFileName(config);
+    const dataUrl = canvas.toDataURL('image/png');
+    
+    if (isMobile()) {
+        showModal(
+            '保存图片',
+            '长按图片保存到相册，或点击下载按钮：',
+            fileName + '.png',
+            dataUrl,
+            () => {
+                downloadImage(fileName, dataUrl);
+            }
+        );
+    } else {
+        downloadImage(fileName, dataUrl);
+    }
+});
+
+document.getElementById('batch-download-btn').addEventListener('click', async () => {
+    if (state.images.length < 2) return;
+    progressBar.style.display = 'block';
+    const config = getConfig();
+    const fileName = getFileName(config);
+    
+    for (let i = 0; i < state.images.length; i++) {
+        const item = state.images[i];
+        progress.style.width = ((i + 1) / state.images.length * 100) + '%';
+        
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        const img = item.img;
+        const infoBarHeight = calculateInfoBarHeight(config, img.width, tempCtx);
+        const gapHeight = config.gapHeight;
+        const isTop = config.infoBarPosition === 'top';
+        
+        tempCanvas.width = img.width;
+        tempCanvas.height = img.height + gapHeight + infoBarHeight;
+        
+        if (isTop) {
+            drawInfoBar(config, img.width, 0, infoBarHeight, tempCtx, tempCanvas, true);
+            if (gapHeight > 0) {
+                tempCtx.fillStyle = '#ffffff';
+                tempCtx.fillRect(0, infoBarHeight, img.width, gapHeight);
+                drawDivider(tempCtx, config, img.width, infoBarHeight, gapHeight);
+            }
+            tempCtx.drawImage(img, 0, infoBarHeight + gapHeight);
+        } else {
+            tempCtx.drawImage(img, 0, 0);
+            if (gapHeight > 0) {
+                tempCtx.fillStyle = '#ffffff';
+                tempCtx.fillRect(0, img.height, img.width, gapHeight);
+                drawDivider(tempCtx, config, img.width, img.height, gapHeight);
+            }
+            drawInfoBar(config, img.width, img.height + gapHeight, infoBarHeight, tempCtx, tempCanvas, false);
+        }
+        
+        const dataUrl = tempCanvas.toDataURL('image/png');
+        const currentFileName = fileName + '_' + (i + 1);
+        
+        if (isMobile()) {
+            showModal(
+                '保存图片 (' + (i + 1) + '/' + state.images.length + ')',
+                '长按图片保存到相册，或点击下载按钮：',
+                currentFileName + '.png',
+                dataUrl,
+                () => {
+                    downloadImage(currentFileName, dataUrl);
+                }
+            );
+            await new Promise(r => setTimeout(r, 500));
+        } else {
+            downloadImage(currentFileName, dataUrl);
+            await new Promise(r => setTimeout(r, 300));
+        }
+    }
+    setTimeout(() => { progressBar.style.display = 'none'; progress.style.width = '0%'; }, 500);
+});
+
+renderTemplateList();
+</script>
+</body>
+</html>
