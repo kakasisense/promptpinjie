@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Unique ID Generator</title>
+</head>
+<body>
+    <h1>Unique ID Generator</h1>
+    <button onclick="displayID()">Generate ID</button>
+    <p id="uniqueID"></p>
+
+    <script>
+        function displayID() {
+            const now = new Date();
+            // 时间部分：yyyyMMddHHmmss
+            const timeStr = now.getFullYear().toString()
+                + String(now.getMonth()+1).padStart(2,'0')
+                + String(now.getDate()).padStart(2,'0')
+                + String(now.getHours()).padStart(2,'0')
+                + String(now.getMinutes()).padStart(2,'0')
+                + String(now.getSeconds()).padStart(2,'0');
+            // 随机数字
+            const randomNum = Math.floor(Math.random() * 10000000);
+            const id = `${timeStr}_${randomNum}`;
+            document.getElementById('uniqueID').textContent = id;
+        }
+    </script>
+</body>
+</html>
