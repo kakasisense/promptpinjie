@@ -10,3 +10,5 @@ index.html：一个提示词拼接小工具，用于拼接多段内容，减少�
 
 [长图裁剪合并](https://kakasisense.github.io/promptpinjie/%E3%80%90%E5%9B%BE%E7%89%87%E5%B0%8F%E5%B7%A5%E5%85%B7%E3%80%91%E9%95%BF%E5%9B%BE%E8%A3%81%E5%89%AA%E5%90%88%E5%B9%B6%E5%B7%A5%E5%85%B7.html)
 
+[唯一id生成器](https://kakasisense.github.io/promptpinjie/%E5%94%AF%E4%B8%80id%E7%94%9F%E6%88%90%E5%99%A8.html)
+[奶酪版](https://www.runningcheese.com/Restore/UniqueIDGenerator.html)
