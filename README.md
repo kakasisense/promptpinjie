@@ -4,7 +4,9 @@
 
 [LinuxDo一键屏蔽用户脚本0824更新 - 开发调优 - LINUX DO](https://linux.do/t/topic/2804550/11)👉[脚本地址](https://api.snowsmtp.com/sightshield.user.js)
 
-index.html：一个提示词拼接小工具，用于拼接多段内容，减少来回选择编辑。https://api.snowsmtp.com/sightshield.user.js
+## 自制小工具
+
+index.html：一个提示词拼接小工具，用于拼接多段内容，减少来回选择编辑。
 
 [提示词拼接](https://kakasisense.github.io/promptpinjie/)
 
