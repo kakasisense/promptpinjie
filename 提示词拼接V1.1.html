@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>提示词拼接V1.1@公众号：开关的txt</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif;}
+body{padding:16px;max-width:760px;margin:0 auto;background:#f7f8fa;color:#1d2129;}
+h2{margin-bottom:16px;font-size:20px;}
+/* 预设库区域 */
+.preset-wrap{background:#fff;border:1px solid #e5e6eb;border-radius:10px;padding:14px;margin-bottom:16px;}
+.preset-title{font-weight:500;margin-bottom:10px;}
+.preset-input-area{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+#presetText{flex:1;min-width:200px;padding:8px;border:1px solid #dcdfe6;border-radius:8px;}
+.preset-item{display:flex;align-items:center;gap:8px;background:#f7f8fa;padding:8px;border-radius:8px;margin:6px 0;}
+.preset-text{flex:1;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-block{background:#ffffff;border:1px solid #e5e6eb;border-radius:10px;padding:14px;margin-bottom:12px;}
+.item-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.index-tag{background:#4080ff;color:#fff;padding:2px 10px;border-radius:12px;font-size:14px;font-weight:500;}
+.btn-group{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+button{border:none;border-radius:8px;padding:8px 10px;font-size:13px;cursor:pointer;}
+.btn-move{background:#e8edff;color:#2b54c9;}
+.btn-del{background:#fee8e8;color:#d63031;}
+.btn-add{background:#4080ff;color:#fff;padding:10px 16px;font-size:15px;width:100%;margin:8px 0;}
+.btn-copy{background:#00b42a;color:#fff;}
+.btn-clear{background:#f2f3f5;color:#333;}
+.btn-preset-add{background:#2b54c9;color:#fff;}
+.btn-preset-use{background:#4080ff;color:#fff;padding:4px 8px;font-size:12px;}
+.btn-preset-del{background:#d63031;color:#fff;padding:4px 8px;font-size:12px;}
+.btn-history{background:#ffecc2;color:#946300;}
+/* ✅文本框允许拖拽缩放高度 */
+.content-input{
+  width:100%;
+  min-height:90px;
+  padding:10px;
+  border:1px solid #dcdfe6;
+  border-radius:8px;
+  font-size:15px;
+  resize:vertical;
+}
+.result-box{background:#fff;border:1px solid #e5e6eb;border-radius:10px;padding:14px;min-height:130px;white-space:pre-wrap;margin:12px 0;}
+.ctrl-bar{display:flex;gap:10px;margin:10px 0;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+<h2>提示词拼接V1.1</h2>
+<!-- ==========预设提示词库========== -->
+<div class="preset-wrap">
+  <div class="preset-title">📦预设提示词库（点击使用，插入到第1段）</div>
+  <div class="preset-input-area">
+    <input type="text" id="presetText" placeholder="输入要保存的常用提示词">
+    <button class="btn-preset-add" id="savePresetBtn">保存预设</button>
+  </div>
+  <div id="presetList"></div>
+</div>
+
+<div id="listWrap">
+  <!--输入项动态生成-->
+</div>
+
+<button class="btn-add" id="addItemBtn">➕新增一段输入框</button>
+
+<div class="ctrl-bar">
+  <button class="btn-history" id="undoBtn">↩撤销</button>
+  <button class="btn-history" id="redoBtn">↪前进</button>
+  <button class="btn-copy" id="copyResultBtn">📋复制拼接结果</button>
+  <button class="btn-clear" id="clearAllBtn">🗑全部清空</button>
+</div>
+
+<label>拼接最终输出：</label>
+<div class="result-box" id="resultBox"></div>
+
+<script>
+const listWrap = document.getElementById('listWrap');
+const addItemBtn = document.getElementById('addItemBtn');
+const copyResultBtn = document.getElementById('copyResultBtn');
+const clearAllBtn = document.getElementById('clearAllBtn');
+const resultBox = document.getElementById('resultBox');
+const savePresetBtn = document.getElementById('savePresetBtn');
+const presetText = document.getElementById('presetText');
+const presetList = document.getElementById('presetList');
+
+// 撤销前进相关
+const undoBtn = document.getElementById('undoBtn');
+const redoBtn = document.getElementById('redoBtn');
+let historyStack = [];
+let historyPointer = -1;
+
+// 段落数据：{ text:"内容", enabled:true } enabled对应是否勾选显示参与拼接
+let itemList = [];
+// 预设词库，localStorage本地持久保存，刷新页面不会丢失
+let presetListData = JSON.parse(localStorage.getItem("promptPreset")) || [];
+
+// 保存历史快照
+function saveHistory(){
+  historyStack.splice(historyPointer+1);
+  const snap = JSON.parse(JSON.stringify(itemList));
+  historyStack.push(snap);
+  historyPointer = historyStack.length -1;
+}
+
+// 撤销
+undoBtn.onclick = ()=>{
+  if(historyPointer <= 0) return;
+  historyPointer--;
+  itemList = JSON.parse(JSON.stringify(historyStack[historyPointer]));
+  renderList();
+  updateOutput();
+}
+// 前进
+redoBtn.onclick = ()=>{
+  if(historyPointer >= historyStack.length-1) return;
+  historyPointer++;
+  itemList = JSON.parse(JSON.stringify(historyStack[historyPointer]));
+  renderList();
+  updateOutput();
+}
+
+// 更新段落渲染
+function renderList(){
+  listWrap.innerHTML = '';
+  itemList.forEach((item,idx)=>{
+    const realIndex = idx+1;
+    const div = document.createElement('div');
+    div.className = 'item-block';
+    div.innerHTML = `
+      <div class="item-header">
+        <span class="index-tag">第${realIndex}段</span>
+        <label style="display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" class="enable-check" data-i="${idx}" ${item.enabled ? 'checked' : ''}>
+          <span>参与拼接</span>
+        </label>
+        <div class="btn-group">
+          <button class="btn-move up-btn" data-i="${idx}">⬆上移</button>
+          <button class="btn-move down-btn" data-i="${idx}">⬇下移</button>
+          <button class="btn-move top-btn" data-i="${idx}">🔝置顶</button>
+          <button class="btn-move bottom-btn" data-i="${idx}">🔻置底</button>
+          <button class="btn-del del-btn" data-i="${idx}">✕删除</button>
+        </div>
+      </div>
+      <textarea class="content-input" data-i="${idx}" placeholder="输入第${realIndex}段提示词内容...">${item.text}</textarea>
+    `;
+    listWrap.appendChild(div);
+  })
+
+  //文本框：oninput实时预览；失去焦点才保存历史，修复中文输入法拼音问题
+  document.querySelectorAll('.content-input').forEach(el=>{
+    el.oninput = (e)=>{
+      const i = Number(e.target.dataset.i);
+      itemList[i].text = e.target.value;
+      updateOutput();
+    }
+    el.onblur = ()=>{
+      saveHistory();
+    }
+  })
+
+  // 勾选框：是否参与拼接
+  document.querySelectorAll('.enable-check').forEach(el=>{
+    el.onchange = (e)=>{
+      const i = Number(e.target.dataset.i);
+      itemList[i].enabled = e.target.checked;
+      saveHistory();
+      updateOutput();
+    }
+  })
+
+  //上移
+  document.querySelectorAll('.up-btn').forEach(el=>{
+    el.onclick = (e)=>{
+      const i = Number(e.target.dataset.i);
+      if(i<=0) return;
+      [itemList[i-1], itemList[i]] = [itemList[i], itemList[i-1]];
+      saveHistory();
+      renderList();
+      updateOutput();
+    }
+  })
+  //下移
+  document.querySelectorAll('.down-btn').forEach(el=>{
+    el.onclick = (e)=>{
+      const i = Number(e.target.dataset.i);
+      if(i >= itemList.length-1) return;
+      [itemList[i], itemList[i+1]] = [itemList[i+1], itemList[i]];
+      saveHistory();
+      renderList();
+      updateOutput();
+    }
+  })
+  //置顶
+  document.querySelectorAll('.top-btn').forEach(el=>{
+    el.onclick = (e)=>{
+      const i = Number(e.target.dataset.i);
+      if(i===0) return;
+      const cur = itemList.splice(i,1)[0];
+      itemList.unshift(cur);
+      saveHistory();
+      renderList();
+      updateOutput();
+    }
+  })
+  //置底
+  document.querySelectorAll('.bottom-btn').forEach(el=>{
+    el.onclick = (e)=>{
+      const i = Number(e.target.dataset.i);
+      const lastIdx = itemList.length-1;
+      if(i === lastIdx) return;
+      const cur = itemList.splice(i,1)[0];
+      itemList.push(cur);
+      saveHistory();
+      renderList();
+      updateOutput();
+    }
+  })
+  //删除段落
+  document.querySelectorAll('.del-btn').forEach(el=>{
+    el.onclick = (e)=>{
+      const i = Number(e.target.dataset.i);
+      itemList.splice(i,1);
+      saveHistory();
+      renderList();
+      updateOutput();
+    }
+  })
+  updateOutput();
+}
+
+// 拼接输出：只拼接 enabled=true 的段落
+function updateOutput(){
+  const filterArr = itemList.filter(x=>x.enabled).map(x=>x.text);
+  const joined = filterArr.join('\n');
+  resultBox.innerText = joined;
+}
+
+// 新增空段落
+addItemBtn.onclick = ()=>{
+  itemList.push({text:'', enabled:true});
+  saveHistory();
+  renderList();
+}
+
+//复制
+copyResultBtn.onclick = async ()=>{
+  const text = resultBox.innerText;
+  await navigator.clipboard.writeText(text);
+  alert('✅已复制拼接后的全部文本');
+}
+
+//全部清空
+clearAllBtn.onclick = ()=>{
+  itemList = [];
+  saveHistory();
+  renderList();
+}
+
+// =========预设词库相关==========
+//保存预设到本地
+function savePresetToStorage(){
+  localStorage.setItem("promptPreset", JSON.stringify(presetListData));
+}
+//渲染预设列表
+function renderPreset(){
+  presetList.innerHTML = '';
+  presetListData.forEach((text,idx)=>{
+    const div = document.createElement('div');
+    div.className = 'preset-item';
+    div.innerHTML = `
+      <div class="preset-text">${text}</div>
+      <button class="btn-preset-use" data-idx="${idx}">使用(插入第1段)</button>
+      <button class="btn-preset-del" data-idx="${idx}">删除</button>
+    `;
+    presetList.appendChild(div);
+  })
+  //点击使用：插入到第一段，默认勾选
+  document.querySelectorAll('.btn-preset-use').forEach(el=>{
+    el.onclick = (e)=>{
+      const idx = Number(e.target.dataset.idx);
+      const content = presetListData[idx];
+      itemList.unshift({text:content, enabled:true});
+      saveHistory();
+      renderList();
+      updateOutput();
+    }
+  })
+  //删除预设条目
+  document.querySelectorAll('.btn-preset-del').forEach(el=>{
+    el.onclick = (e)=>{
+      const idx = Number(e.target.dataset.idx);
+      presetListData.splice(idx,1);
+      savePresetToStorage();
+      renderPreset();
+    }
+  })
+}
+//保存新预设
+savePresetBtn.onclick = ()=>{
+  const val = presetText.value.trim();
+  if(!val) return;
+  presetListData.push(val);
+  savePresetToStorage();
+  renderPreset();
+  presetText.value = '';
+}
+
+//初始化：2个段落，默认勾选参与拼接
+itemList = [
+  {text:'', enabled:true},
+  {text:'', enabled:true}
+];
+saveHistory();
+renderList();
+renderPreset();
+</script>
+</body>
+</html>
