@@ -1,6 +1,7 @@
 
 
 ## 畅游L站
+翻译脚本-成精时翻译，下载链接：https://kakasisense.github.io/promptpinjie/%E6%88%90%E7%B2%BE%E6%97%B6%E7%BF%BB%E8%AF%91cometix-translate.user.js
 
 [LinuxDo一键屏蔽用户脚本0824更新 - 开发调优 - LINUX DO](https://linux.do/t/topic/2804550/11)👉[脚本地址](https://api.snowsmtp.com/sightshield.user.js)
 
