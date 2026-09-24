@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>对照撞词海报</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f3f4f6;
+    padding: 24px;
+    font-family: system-ui, -apple-system, "Noto Serif SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #1f2937;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.page-header .sub-title {
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.config-panel {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.panel-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.col-set {
+    background: #fafafa;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px;
+}
+
+.col-set h3 {
+    font-size: 15px;
+    margin-bottom: 14px;
+    font-weight: 600;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.form-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-item label {
+    font-size: 13px;
+    color: #4b5563;
+}
+
+input[type="color"],
+input[type="file"],
+input[type="range"],
+select,
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 14px;
+}
+
+input[type="color"] {
+    height: 40px;
+    cursor: pointer;
+}
+
+input[type="file"] {
+    padding: 6px;
+}
+
+textarea {
+    width: 100%;
+    min-height: 160px;
+    padding: 12px;
+    font-size: 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+button {
+    padding: 9px 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    background: #2563eb;
+    transition: background 0.2s ease;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+button.btn-clear {
+    background: #dc2626;
+}
+
+button.btn-clear:hover {
+    background: #b91c1c;
+}
+
+button.btn-undo-redo {
+    background: #059669;
+}
+
+button.btn-undo-redo:hover {
+    background: #047857;
+}
+
+button.btn-ghost {
+    background: #64748b;
+}
+
+button.btn-ghost:hover {
+    background: #475569;
+}
+
+.btn-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.preview-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.poster {
+    display: flex;
+    background-color: #781c22;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+    position: relative;
+}
+
+.poster-bg-image {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.col-left,
+.col-right {
+    width: 50%;
+    padding: 40px 24px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.col-bg-image {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.color-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.text-layer {
+    position: relative;
+    z-index: 2;
+    font-size: 24px;
+    line-height: 2.4;
+    white-space: pre;
+}
+
+.info-bar {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #6b7280;
+    text-align: center;
+}
+
+.size-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.size-row button {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.size-row button:hover {
+    background: #d1d5db;
+}
+
+.size-row button.active {
+    background: #2563eb;
+    color: #fff;
+}
+
+@media (max-width: 900px) {
+    .two-col {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+    <div class="page-header">
+        <h1>对照撞词海报</h1>
+        <div class="sub-title">来自公众号@开关的txt</div>
+    </div>
+
+    <div class="config-panel">
+        <div class="panel-title">海报尺寸</div>
+        <div class="form-grid" style="max-width: 720px; margin: 0 auto;">
+            <div class="form-item">
+                <label>导出宽度（px）</label>
+                <input type="number" id="posterWidth" value="720" min="320" max="2400" />
+            </div>
+            <div class="form-item">
+                <label>导出高度（px）</label>
+                <input type="number" id="posterHeight" value="880" min="320" max="4000" />
+            </div>
+            <div class="form-item">
+                <label>高度模式</label>
+                <select id="heightMode">
+                    <option value="fixed">🔒锁定固定高度</option>
+                    <option value="auto">📐根据内容自动高度</option>
+                </select>
+            </div>
+            <div class="form-item">
+                <label>自动模式最小高度</label>
+                <input type="number" id="autoMinHeight" value="600" min="300" max="4000"/>
+            </div>
+        </div>
+        <div class="size-row" id="sizeTemplates">
+            <button data-w="300" data-h="450">3:4 小红书</button>
+            <button data-w="400" data-h="600">2:3 海报</button>
+            <button data-w="350" data-h="490">5:7 杂志</button>
+            <button data-w="480" data-h="270">16:9 横图</button>
+            <button data-w="270" data-h="480">9:16 竖屏</button>
+            <button data-w="400" data-h="400">1:1 方图</button>
+        </div>
+    </div>
+
+    <div class="config-panel">
+        <div class="panel-title">整张背景</div>
+        <div class="form-grid" style="max-width: 720px; margin: 0 auto;">
+            <div class="form-item">
+                <label>整张背景图</label>
+                <input type="file" id="wholeBgInput" accept="image/*" />
+            </div>
+            <div class="form-item">
+                <label>操作</label>
+                <button class="btn-ghost" id="clearWholeBg">清除整张背景</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="two-col">
+        <div class="col-set">
+            <h3>左栏设置</h3>
+            <div class="form-grid">
+                <div class="form-item">
+                    <label>背景色</label>
+                    <input type="color" id="colorLeft" value="#781c22" />
+                </div>
+                <div class="form-item">
+                    <label>背景色透明度</label>
+                    <input type="range" id="opacityLeft" min="0" max="100" value="100" />
+                </div>
+                <div class="form-item">
+                    <label>左栏背景图</label>
+                    <input type="file" id="leftBgInput" accept="image/*" />
+                </div>
+                <div class="form-item">
+                    <label>操作</label>
+                    <button class="btn-ghost" id="clearLeftBg">清除左栏背景</button>
+                </div>
+
+                <div class="form-item">
+                    <label>文字颜色</label>
+                    <input type="color" id="textColorLeft" value="#ffffff" />
+                </div>
+                <div class="form-item">
+                    <label>行间距</label>
+                    <input type="range" id="lineHeightLeft" min="1.2" max="4" step="0.1" value="2.4" />
+                </div>
+
+                <div class="form-item">
+                    <label>字体选择</label>
+                    <select id="fontFamilyLeft">
+                        <option value="'Noto Serif SC',serif">思源宋体</option>
+                        <option value="'Noto Sans SC',sans-serif">思源黑体</option>
+                        <option value="KaiTi,STKaiti,serif">楷体</option>
+                        <option value="SimSun,STSong,serif">宋体</option>
+                        <option value="SimHei,STHeiti,sans-serif">黑体</option>
+                        <option value="Microsoft YaHei,sans-serif">微软雅黑</option>
+                        <option value="">自定义字体(填写下方)</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label>自定义字体名称</label>
+                    <input type="text" id="fontCustomLeft" placeholder="如:FangSong" value="" />
+                </div>
+
+                <div class="form-item">
+                    <label>文字大小</label>
+                    <input type="range" id="fontSizeLeft" min="14" max="42" value="24" />
+                </div>
+                <div class="form-item">
+                    <label>对齐方式</label>
+                    <select id="textAlignLeft">
+                        <option value="center">居中</option>
+                        <option value="left">居左</option>
+                        <option value="right">居右</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+                <label>左侧文本</label>
+                <textarea id="textLeft">老夫聊发少年狂
+左牵黄
+右擎苍
+锦帽貂裘
+千骑卷平冈
+为报倾城随太守
+亲射虎
+看孙郎
+酒酣胸胆尚开张
+鬓微霜
+又何妨
+持节云中
+何日遣冯唐
+会挽雕弓如满月
+西北望
+射天狼</textarea>
+                <div class="btn-row">
+                    <button class="btn-clear" id="clearLeft">清空左栏</button>
+                    <button class="btn-undo-redo" id="undoLeft">撤销</button>
+                    <button class="btn-undo-redo" id="redoLeft">恢复</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-set">
+            <h3>右栏设置</h3>
+            <div class="form-grid">
+                <div class="form-item">
+                    <label>背景色</label>
+                    <input type="color" id="colorRight" value="#203454" />
+                </div>
+                <div class="form-item">
+                    <label>背景色透明度</label>
+                    <input type="range" id="opacityRight" min="0" max="100" value="100" />
+                </div>
+                <div class="form-item">
+                    <label>右栏背景图</label>
+                    <input type="file" id="rightBgInput" accept="image/*" />
+                </div>
+                <div class="form-item">
+                    <label>操作</label>
+                    <button class="btn-ghost" id="clearRightBg">清除右栏背景</button>
+                </div>
+
+                <div class="form-item">
+                    <label>文字颜色</label>
+                    <input type="color" id="textColorRight" value="#ffffff" />
+                </div>
+                <div class="form-item">
+                    <label>行间距</label>
+                    <input type="range" id="lineHeightRight" min="1.2" max="4" step="0.1" value="2.4" />
+                </div>
+
+                <div class="form-item">
+                    <label>字体选择</label>
+                    <select id="fontFamilyRight">
+                        <option value="'Noto Serif SC',serif">思源宋体</option>
+                        <option value="'Noto Sans SC',sans-serif">思源黑体</option>
+                        <option value="KaiTi,STKaiti,serif">楷体</option>
+                        <option value="SimSun,STSong,serif">宋体</option>
+                        <option value="SimHei,STHeiti,sans-serif">黑体</option>
+                        <option value="Microsoft YaHei,sans-serif">微软雅黑</option>
+                        <option value="">自定义字体(填写下方)</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label>自定义字体名称</label>
+                    <input type="text" id="fontCustomRight" placeholder="如:FangSong" value="" />
+                </div>
+
+                <div class="form-item">
+                    <label>文字大小</label>
+                    <input type="range" id="fontSizeRight" min="14" max="42" value="24" />
+                </div>
+                <div class="form-item">
+                    <label>对齐方式</label>
+                    <select id="textAlignRight">
+                        <option value="center">居中</option>
+                        <option value="left">居左</option>
+                        <option value="right">居右</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+                <label>右侧文本</label>
+                <textarea id="textRight">十年生死两茫茫
+不思量
+自难忘
+千里孤坟
+无处话凄凉
+纵使相逢应不识
+尘满面
+鬓如霜
+夜来幽梦忽还乡
+小轩窗
+正梳妆
+相顾无言
+惟有泪千行
+料得年年肠断处
+明月夜
+短松冈</textarea>
+                <div class="btn-row">
+                    <button class="btn-clear" id="clearRight">清空右栏</button>
+                    <button class="btn-undo-redo" id="undoRight">撤销</button>
+                    <button class="btn-undo-redo" id="redoRight">恢复</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+        <button id="downloadBtn" style="padding: 12px 28px; font-size: 15px;">下载海报图片</button>
+    </div>
+
+    <div class="preview-wrap">
+        <div class="poster" id="poster">
+            <div class="poster-bg-image" id="posterBgImage"></div>
+            <div class="col-left" id="colLeft">
+                <div class="col-bg-image" id="leftColBgImage"></div>
+                <div class="color-layer" id="leftColorLayer"></div>
+                <div class="text-layer" id="leftTextLayer"></div>
+            </div>
+            <div class="col-right" id="colRight">
+                <div class="col-bg-image" id="rightColBgImage"></div>
+                <div class="color-layer" id="rightColorLayer"></div>
+                <div class="text-layer" id="rightTextLayer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-bar" id="infoBar"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+const poster = document.getElementById('poster');
+const posterBgImage = document.getElementById('posterBgImage');
+const leftColBgImage = document.getElementById('leftColBgImage');
+const rightColBgImage = document.getElementById('rightColBgImage');
+const leftColorLayer = document.getElementById('leftColorLayer');
+const rightColorLayer = document.getElementById('rightColorLayer');
+const leftTextLayer = document.getElementById('leftTextLayer');
+const rightTextLayer = document.getElementById('rightTextLayer');
+const infoBar = document.getElementById('infoBar');
+
+const posterWidthInput = document.getElementById('posterWidth');
+const posterHeightInput = document.getElementById('posterHeight');
+const heightModeSelect = document.getElementById('heightMode');
+const autoMinHeightInput = document.getElementById('autoMinHeight');
+const sizeTemplates = document.getElementById('sizeTemplates');
+
+const colorLeftInput = document.getElementById('colorLeft');
+const colorRightInput = document.getElementById('colorRight');
+const opacityLeftInput = document.getElementById('opacityLeft');
+const opacityRightInput = document.getElementById('opacityRight');
+
+const textColorLeftInput = document.getElementById('textColorLeft');
+const textColorRightInput = document.getElementById('textColorRight');
+const lineHeightLeftInput = document.getElementById('lineHeightLeft');
+const lineHeightRightInput = document.getElementById('lineHeightRight');
+const fontFamilyLeftSelect = document.getElementById('fontFamilyLeft');
+const fontFamilyRightSelect = document.getElementById('fontFamilyRight');
+const fontCustomLeftInput = document.getElementById('fontCustomLeft');
+const fontCustomRightInput = document.getElementById('fontCustomRight');
+
+const fontSizeLeftInput = document.getElementById('fontSizeLeft');
+const fontSizeRightInput = document.getElementById('fontSizeRight');
+const textAlignLeftSelect = document.getElementById('textAlignLeft');
+const textAlignRightSelect = document.getElementById('textAlignRight');
+
+const textLeftInput = document.getElementById('textLeft');
+const textRightInput = document.getElementById('textRight');
+const downloadBtn = document.getElementById('downloadBtn');
+
+const clearLeft = document.getElementById('clearLeft');
+const clearRight = document.getElementById('clearRight');
+const undoLeft = document.getElementById('undoLeft');
+const redoLeft = document.getElementById('redoLeft');
+const undoRight = document.getElementById('undoRight');
+const redoRight = document.getElementById('redoRight');
+
+const wholeBgInput = document.getElementById('wholeBgInput');
+const leftBgInput = document.getElementById('leftBgInput');
+const rightBgInput = document.getElementById('rightBgInput');
+const clearWholeBg = document.getElementById('clearWholeBg');
+const clearLeftBg = document.getElementById('clearLeftBg');
+const clearRightBg = document.getElementById('clearRightBg');
+
+let historyLeft = [];
+let historyIndexLeft = -1;
+let historyRight = [];
+let historyIndexRight = -1;
+const HISTORY_MAX = 50;
+
+function saveLeftHistory() {
+    historyLeft.splice(historyIndexLeft + 1);
+    historyLeft.push(textLeftInput.value);
+    if (historyLeft.length > HISTORY_MAX) historyLeft.shift();
+    else historyIndexLeft = historyLeft.length - 1;
+}
+
+function saveRightHistory() {
+    historyRight.splice(historyIndexRight + 1);
+    historyRight.push(textRightInput.value);
+    if (historyRight.length > HISTORY_MAX) historyRight.shift();
+    else historyIndexRight = historyRight.length - 1;
+}
+
+function hexToRgba(hex, opacity) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+function getFontFamily(selectEl, customEl) {
+    let val = selectEl.value.trim();
+    const custom = customEl.value.trim();
+    if (val === '' && custom) {
+        return custom;
+    }
+    return val;
+}
+
+function render() {
+    const w = parseInt(posterWidthInput.value) || 720;
+    const fixedH = parseInt(posterHeightInput.value) || 880;
+    const minH = parseInt(autoMinHeightInput.value) || 600;
+    const mode = heightModeSelect.value;
+
+    leftTextLayer.style.color = textColorLeftInput.value;
+    rightTextLayer.style.color = textColorRightInput.value;
+    leftTextLayer.style.lineHeight = lineHeightLeftInput.value;
+    rightTextLayer.style.lineHeight = lineHeightRightInput.value;
+    leftTextLayer.style.fontFamily = getFontFamily(fontFamilyLeftSelect, fontCustomLeftInput);
+    rightTextLayer.style.fontFamily = getFontFamily(fontFamilyRightSelect, fontCustomRightInput);
+    leftTextLayer.style.fontSize = fontSizeLeftInput.value + 'px';
+    rightTextLayer.style.fontSize = fontSizeRightInput.value + 'px';
+    leftTextLayer.style.textAlign = textAlignLeftSelect.value;
+    rightTextLayer.style.textAlign = textAlignRightSelect.value;
+    leftTextLayer.textContent = textLeftInput.value;
+    rightTextLayer.textContent = textRightInput.value;
+
+    leftColorLayer.style.backgroundColor = hexToRgba(colorLeftInput.value, opacityLeftInput.value / 100);
+    rightColorLayer.style.backgroundColor = hexToRgba(colorRightInput.value, opacityRightInput.value / 100);
+
+    poster.style.width = w + 'px';
+    let realH;
+    if(mode === 'auto'){
+        const leftContentH = leftTextLayer.scrollHeight + 80;
+        const rightContentH = rightTextLayer.scrollHeight + 80;
+        realH = Math.max(leftContentH, rightContentH, minH);
+        poster.style.height = 'auto';
+        poster.style.minHeight = realH + 'px';
+    }else{
+        realH = fixedH;
+        poster.style.height = realH + 'px';
+        poster.style.minHeight = 'unset';
+    }
+    infoBar.textContent = `模式：${mode==="fixed"?"🔒固定高度":"📐自动高度"} | 导出：${w} × ${Math.round(realH)} px`;
+}
+
+function loadImageToBackground(file, targetElement) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        targetElement.style.backgroundImage = `url(${e.target.result})`;
+        render();
+    };
+    reader.readAsDataURL(file);
+}
+
+wholeBgInput.addEventListener('change', function () { loadImageToBackground(this.files[0], posterBgImage); });
+leftBgInput.addEventListener('change', function () { loadImageToBackground(this.files[0], leftColBgImage); });
+rightBgInput.addEventListener('change', function () { loadImageToBackground(this.files[0], rightColBgImage); });
+
+clearWholeBg.addEventListener('click', function () { posterBgImage.style.backgroundImage = ''; wholeBgInput.value = ''; render(); });
+clearLeftBg.addEventListener('click', function () { leftColBgImage.style.backgroundImage = ''; leftBgInput.value = ''; render(); });
+clearRightBg.addEventListener('click', function () { rightColBgImage.style.backgroundImage = ''; rightBgInput.value = ''; render(); });
+
+undoLeft.addEventListener('click', function () { if (historyIndexLeft > 0) { historyIndexLeft--; textLeftInput.value = historyLeft[historyIndexLeft]; render(); } });
+redoLeft.addEventListener('click', function () { if (historyIndexLeft < historyLeft.length - 1) { historyIndexLeft++; textLeftInput.value = historyLeft[historyIndexLeft]; render(); } });
+undoRight.addEventListener('click', function () { if (historyIndexRight > 0) { historyIndexRight--; textRightInput.value = historyRight[historyIndexRight]; render(); } });
+redoRight.addEventListener('click', function () { if (historyIndexRight < historyRight.length - 1) { historyIndexRight++; textRightInput.value = historyRight[historyIndexRight]; render(); } });
+
+clearLeft.addEventListener('click', function () { saveLeftHistory(); textLeftInput.value = ''; render(); });
+clearRight.addEventListener('click', function () { saveRightHistory(); textRightInput.value = ''; render(); });
+
+[
+    posterWidthInput, posterHeightInput, heightModeSelect, autoMinHeightInput,
+    colorLeftInput, colorRightInput, opacityLeftInput, opacityRightInput,
+    textColorLeftInput, textColorRightInput, lineHeightLeftInput, lineHeightRightInput,
+    fontFamilyLeftSelect, fontFamilyRightSelect, fontCustomLeftInput, fontCustomRightInput,
+    fontSizeLeftInput, fontSizeRightInput, textAlignLeftSelect, textAlignRightSelect
+].forEach(el => el.addEventListener('input', render));
+
+textLeftInput.addEventListener('input', function () { saveLeftHistory(); render(); });
+textRightInput.addEventListener('input', function () { saveRightHistory(); render(); });
+
+sizeTemplates.addEventListener('click', function (e) {
+    if (e.target.tagName === 'BUTTON') {
+        const w = e.target.getAttribute('data-w');
+        const h = e.target.getAttribute('data-h');
+        posterWidthInput.value = w;
+        posterHeightInput.value = h;
+        render();
+        document.querySelectorAll('#sizeTemplates button').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+    }
+});
+
+saveLeftHistory();
+saveRightHistory();
+render();
+
+downloadBtn.addEventListener('click', async function () {
+    downloadBtn.disabled = true;
+    try {
+        const canvas = await html2canvas(poster, {
+            scale: 1,
+            useCORS: true,
+            backgroundColor: null
+        });
+        const link = document.createElement('a');
+        link.download = "对照撞词海报.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    } catch (err) {
+        alert("下载失败，请检查网络；也可以直接截图预览图。");
+    }
+    downloadBtn.disabled = false;
+});
+</script>
+</body>
+</html>
