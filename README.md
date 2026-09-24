@@ -11,6 +11,8 @@ index.html：一个提示词拼接小工具，用于拼接多段内容，减少�
 
 [提示词拼接v1.1](https://kakasisense.github.io/promptpinjie/%E6%8F%90%E7%A4%BA%E8%AF%8D%E6%8B%BC%E6%8E%A5V1.1.html)
 
+[对撞词海报](https://kakasisense.github.io/promptpinjie/%E5%AF%B9%E6%92%9E%E8%AF%8D%E6%B5%B7%E6%8A%A5.html)
+
 [提示词拼接](https://kakasisense.github.io/promptpinjie/)
 
 [代码块一键复制](https://kakasisense.github.io/promptpinjie/%E4%BB%A3%E7%A0%81%E5%9D%97%E4%B8%80%E9%94%AE%E5%A4%8D%E5%88%B6.html)
