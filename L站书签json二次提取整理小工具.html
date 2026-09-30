@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L站书签json二次提取整理小工具</title>
+    <style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui, sans-serif;}
+body{padding:16px;max-width:1200px;margin:0 auto;background:#f5f7fa;}
+h1{font-size:18px;margin-bottom:16px;color:#222;}
+.container{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:768px){.container{grid-template-columns:1fr;}}
+.box{background:#fff;padding:14px;border-radius:8px;border:1px solid #ddd;}
+h2{font-size:15px;margin-bottom:10px;color:#333;}
+textarea{width:100%;min-height:380px;padding:10px;border:1px solid #ccc;border-radius:6px;font-family:Consolas,monospace;font-size:13px;resize:vertical;}
+.btn-group{margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;}
+button{padding:8px 14px;border:none;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font-size:14px;}
+button:hover{background:#1d4ed8;}
+button.secondary{background:#6b7280;}
+button.secondary:hover{background:#4b5563;}
+button.success{background:#059669;}
+button.success:hover{background:#047857;}
+#output{white-space:pre-wrap;min-height:420px;padding:10px;border:1px solid #ccc;border-radius:6px;overflow:auto;font-size:13px;background:#fafafa;}
+.file-input-wrap{margin-bottom:10px;}
+#fileInput{display:none;}
+.file-label{display:inline-block;padding:8px 14px;background:#7c3aed;color:#fff;border-radius:6px;cursor:pointer;font-size:14px;}
+.file-label:hover{background:#6d28d9;}
+</style>
+</head>
+<body>
+<h1>L站书签json二次提取整理小工具</h1>
+<div class="container">
+    <div class="box">
+        <h2>输入JSON｜粘贴文本 / 导入JSON文件</h2>
+        <div class="file-input-wrap">
+            <input type="file" id="fileInput" accept=".json">
+            <label for="fileInput" class="file-label">📂 选择本地JSON文件导入</label>
+        </div>
+        <textarea id="jsonInput" placeholder='粘贴json，示例：
+{
+  "bookmarks": [
+    {"title":"xxx","url":"https://xxx"}
+  ]
+}'></textarea>
+        <div class="btn-group">
+            <button id="parseBtn">提取转换</button>
+            <button id="clearBtn" class="secondary">清空全部</button>
+        </div>
+    </div>
+    <div class="box">
+        <h2>输出结果 格式：[标题](url)</h2>
+        <div id="output"></div>
+        <div class="btn-group">
+            <button id="copyBtn">复制输出内容</button>
+            <button id="exportTxt" class="success">导出 TXT</button>
+            <button id="exportMd" class="success">导出 MD</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const jsonInput = document.getElementById('jsonInput');
+const outputEl = document.getElementById('output');
+const parseBtn = document.getElementById('parseBtn');
+const clearBtn = document.getElementById('clearBtn');
+const copyBtn = document.getElementById('copyBtn');
+const exportTxt = document.getElementById('exportTxt');
+const exportMd = document.getElementById('exportMd');
+const fileInput = document.getElementById('fileInput');
+
+let resultText = "";
+
+// 导入本地JSON文件
+fileInput.onchange = function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+        jsonInput.value = ev.target.result;
+        outputEl.textContent = "文件已载入，点击提取转换";
+    };
+    reader.onerror = ()=>{
+        outputEl.textContent = "文件读取失败";
+    };
+    reader.readAsText(file);
+};
+
+parseBtn.onclick = ()=>{
+    try{
+        const text = jsonInput.value.trim();
+        if(!text){
+            outputEl.textContent = "请粘贴JSON内容或者导入JSON文件";
+            resultText = "";
+            return;
+        }
+        const obj = JSON.parse(text);
+        const list = obj.bookmarks || [];
+        const lines = [];
+        for(const item of list){
+            const t = (item.title||'').trim();
+            const u = (item.url||'').trim();
+            if(t && u){
+                lines.push(`[${t}](${u})`);
+            }
+        }
+        resultText = lines.join('\n');
+        outputEl.textContent = resultText;
+    }catch(e){
+        outputEl.textContent = "JSON解析错误："+e.message;
+        resultText = "";
+    }
+};
+
+clearBtn.onclick = ()=>{
+    jsonInput.value = '';
+    outputEl.textContent = '';
+    resultText = "";
+    fileInput.value = '';
+};
+
+copyBtn.onclick = async ()=>{
+    if(!resultText) return;
+    try{
+        await navigator.clipboard.writeText(resultText);
+        alert("已复制到剪贴板");
+    }catch(err){
+        alert("复制失败，请手动选中复制");
+    }
+};
+
+function downloadFile(content, filename, mime){
+    const blob = new Blob([content], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+exportTxt.onclick = ()=>{
+    if(!resultText){
+        alert("请先执行提取转换");
+        return;
+    }
+    downloadFile(resultText, "L站书签列表.txt", "text/plain");
+};
+
+exportMd.onclick = ()=>{
+    if(!resultText){
+        alert("请先执行提取转换");
+        return;
+    }
+    downloadFile(resultText, "L站书签列表.md", "text/markdown");
+};
+</script>
+</body>
+</html>
